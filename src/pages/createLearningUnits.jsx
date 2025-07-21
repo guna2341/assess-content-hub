@@ -356,7 +356,6 @@ export default function CreateLearningUnitsPage() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => toggleStatus(material.id)}
                                                 className={material.status === "published" ? "text-green-600" : "text-orange-600"}
                                             >
                                                 {material.status === "published" ? "Published" : "Draft"}
