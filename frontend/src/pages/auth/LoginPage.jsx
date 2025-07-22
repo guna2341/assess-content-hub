@@ -47,12 +47,11 @@ export function LoginPage() {
 
   const quickLogin = (userRole) => {
     const users = {
-      admin: { email: 'admin@contenthub.com', name: 'Admin' },
-      student: { email: 'student@contenthub.com', name: 'Student' },
-      reviewer: { email: 'reviewer@contenthub.com', name: 'Reviewer' },
+      admin: { email: 'admin@contenthub.com', name: 'Admin User' },
+      student: { email: 'student@contenthub.com', name: 'Student User' },
+      reviewer: { email: 'reviewer@contenthub.com', name: 'Reviewer User' },
     };
-    console.log(userRole);
-    
+
     const user = users[userRole];
     login({ id: '1', ...user, role: userRole }, 'mock-token-123');
     navigate('/dashboard');

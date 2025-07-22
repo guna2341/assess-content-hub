@@ -199,7 +199,3 @@
   background: none;
   font-size: 0.8rem;
 }
-
-:root::-webkit-scrollbar {
-  width: 0;
-}

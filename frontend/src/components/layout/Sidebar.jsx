@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from "../../stores/authStore";
+import { Button } from '@/components/ui/button';
 
 export function Sidebar() {
   const { user } = useAuthStore();

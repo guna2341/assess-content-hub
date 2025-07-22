@@ -35,7 +35,6 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminContentStore } from '../../zustand/admin/contentUnits';
-import { useAuthStore } from '@/stores/authStore';
 
 export function ContentListPage() {
   const navigate = useNavigate();
@@ -45,7 +44,7 @@ export function ContentListPage() {
 
   const contentUnits = useAdminContentStore(state => state.content);
   const deleteContent = useAdminContentStore(state => state.deleteContent);
-  const { user } = useAuthStore();
+
   function handleDeleteUnit(action,id) { 
     if (action === "delete") {
       deleteContent(id);
@@ -250,52 +249,44 @@ export function ContentListPage() {
                       </div>
                     </div>
                   </div>
-                  {user == "admin" ?
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}`)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}/edit`)}>
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}`)}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}/edit`)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
                    
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4 mr-1" />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Unit</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this content unit?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteUnit('delete',unit.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
                             Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Unit</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this content unit?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteUnit('delete', unit.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
 
-                    </div>
-                    :
-                    <div>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/reviews`)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
-                      </div>
-                  }
+                  </div>
                 </div>
               </CardContent>
             </Card>

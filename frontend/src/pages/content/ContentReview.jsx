@@ -109,8 +109,15 @@ export function ContentReviewComponent() {
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Content Review</h1>
+                    <p className="text-muted-foreground">
+                        Review and approve content units before publication
+                    </p>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -130,7 +137,7 @@ export function ContentReviewComponent() {
                         </div>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="all">All Statuses</SelectItem>
                         <SelectItem value="pending">Pending Review</SelectItem>
                         <SelectItem value="published">Published</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
@@ -149,9 +156,8 @@ export function ContentReviewComponent() {
                         <SelectItem value="hard">Hard</SelectItem>
                     </SelectContent>
                 </Select>
-                    </div>
-                </CardContent>
-            </Card>
+            </div>
+
             <div className="space-y-4">
                 {filteredContent.length > 0 ? (
                     filteredContent.map(contentUnit => (
@@ -178,15 +184,6 @@ export function ContentReviewComponent() {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {contentUnit?.imageLink && 
-                                <img src={contentUnit.imageLink} />
-                                }
-                                {contentUnit?.videoLink && 
-                                    <Input
-                                    value={contentUnit?.videoLink}
-                                    
-                                />
-                                }
                                 <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: contentUnit.content }} />
 
                                 {contentUnit.questions && (
