@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuestionStore } from '../../zustand/admin/questionBank';
+import { useAuthStore } from '@/stores/authStore';
 
 export function QuestionReviewComponent() {
     const { toast } = useToast();
@@ -30,6 +31,7 @@ export function QuestionReviewComponent() {
     const [expandedTopics, setExpandedTopics] = useState([]);
     const [selectedTopic, setSelectedTopic] = useState('all');
     const { questionBank, updateQuestionStatus } = useQuestionStore();
+    const { user } = useAuthStore();
 
     // Flatten all questions from the question bank
     const flattenQuestions = (items, parentPath = '', parentIds = {}) => {
