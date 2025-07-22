@@ -20,13 +20,10 @@ import { QuestionReviewComponent } from '../question-bank/QuestionReview';
 
 export function ReviewsPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('pending');
-  
+  const [activeTab, setActiveTab] = useState('content');
+
   const {
-    pendingQuestions,
-    completedReviews,
     reviewComments,
-    setReviewComment,
     submitReview
   } = useReviewStore();
 
@@ -89,7 +86,49 @@ export function ReviewsPage() {
 
   return (
     <div className="space-y-6">
-<QuestionReviewComponent/>
+      {activeTab == "content" ? 
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Content Review</h1>
+            <p className="text-muted-foreground">
+              Review and approve content units before publication
+            </p>
+          </div>
+        </div>
+        :
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Question Review</h1>
+            <p className="text-muted-foreground">
+              Review and approve questions before they're added to the question bank
+            </p>
+          </div>
+        </div>
+      }
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="grid grid-cols-2 w-full">
+          <TabsTrigger value="content">
+            <Eye className="h-4 w-4 mr-2" />
+            Content Review
+          </TabsTrigger>
+          <TabsTrigger value="questions">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Question Bank Review
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="content" className="pt-4">
+          <ContentReviewComponent />
+        </TabsContent>
+
+        <TabsContent value="questions" className="pt-4">
+          <QuestionReviewComponent />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

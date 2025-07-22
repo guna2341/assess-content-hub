@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuestionStore } from '../../zustand/admin/questionBank';
 import { useAuthStore } from '@/stores/authStore';
+import { useNavigate } from 'react-router-dom';
 
 export function QuestionReviewComponent() {
     const { toast } = useToast();
@@ -31,7 +32,6 @@ export function QuestionReviewComponent() {
     const [expandedTopics, setExpandedTopics] = useState([]);
     const [selectedTopic, setSelectedTopic] = useState('all');
     const { questionBank, updateQuestionStatus } = useQuestionStore();
-    const { user } = useAuthStore();
 
     // Flatten all questions from the question bank
     const flattenQuestions = (items, parentPath = '', parentIds = {}) => {
@@ -220,18 +220,6 @@ export function QuestionReviewComponent() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Question Review</h1>
-                    <p className="text-muted-foreground">
-                        Review and approve questions before they're added to the question bank
-                    </p>
-                </div>
-                <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Question
-                </Button>
-            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Topic Hierarchy Sidebar */}

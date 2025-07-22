@@ -24,6 +24,7 @@ import { CommentsPage } from "./pages/commentsPage";
 import { ProfilePage } from "./pages/profilePage";
 import CreateLearningUnitsPage from "./pages/createLearningUnits";
 import { UnauthorizedPage } from "./pages/auth/unauthorized";
+import { NotFoundPage } from "./pages/auth/notFound";
 
 const queryClient = new QueryClient();
 
@@ -125,7 +126,7 @@ const App = () => (
               } />
           </Route>
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
-          {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
