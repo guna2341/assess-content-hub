@@ -1,48 +1,36 @@
-const { Model, DataTypes } = require('sequelize');
-const bcrypt = require('bcryptjs');
-
+// models/file.js
 module.exports = (sequelize) => {
-  class User extends Model {
-    static associate(models) {
-      User.hasMany(models.File, {
-        foreignKey: 'userId',
-        as: 'files'
-      });
-    }
+  const { DataTypes } = require("sequelize");
 
-    validPassword(password) {
-      return bcrypt.compareSync(password, this.password);
-    }
-  }
-
-  User.init({
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
+  const File = sequelize.define(
+    "File",
+    {
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      type: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      path: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
     },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      set(value) {
-        this.setDataValue('password', bcrypt.hashSync(value, 12));
-      }
-    },
-    name: DataTypes.STRING,
-    role: {
-      type: DataTypes.STRING,
-      defaultValue: 'user'
+    {
+      freezeTableName: true,
+      timestamps: true,
     }
-  }, {
-    sequelize,
-    modelName: 'User',
-    timestamps: true,
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
-  });
+  );
 
-  return User;
+  File.associate = (models) => {
+    File.belongsTo(models.User, { foreignKey: "userId", as: "user" });
+  };
+
+  return File;
 };
