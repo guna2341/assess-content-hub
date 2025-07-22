@@ -4,14 +4,17 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
-const sequelize = require('./db');
+const { sequelize } = require('./config/db'); 
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+const PORT = process.env.PORT || 5000;
+
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: "*",
   credentials: true
 }));
 app.use(express.json());
@@ -23,6 +26,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// Routes
+// app.use('/auth', authRoutes);
 
 // Test DB connection
 const testConnection = async () => {
@@ -41,17 +47,16 @@ const testConnection = async () => {
 testConnection();
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/users', userRoutes);
+app.use('/auth', authRoutes);
 
-
+app.use('/', (req,res) => {
+    res.json({ message: 'Welcome to the API' });
+})
 
 // Error handling middleware
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });

@@ -1,5 +1,5 @@
 const { Sequelize } = require('sequelize');
-const config = require('./config/config');
+const config = require('./config.json');
 
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
@@ -21,16 +21,15 @@ const sequelize = new Sequelize(
   }
 );
 
-// Import models
-const User = require('./models/User');
-const File = require('./models/File');
+// ✅ CALL BOTH FACTORY FUNCTIONS
+const defineUser = require("../models/User");
+const defineFile = require("../models/file");
 
-// Initialize models
-User.init(sequelize);
-File.init(sequelize);
+const User = defineUser(sequelize); // ✅ initialized
+const File = defineFile(sequelize); // ✅ initialized
 
-// Set up associations
-User.associate(sequelize.models);
-File.associate(sequelize.models);
+// ✅ Set up associations AFTER all models are defined
+if (User.associate) User.associate(sequelize.models);
+if (File.associate) File.associate(sequelize.models);
 
-module.exports = sequelize;
+module.exports = { sequelize, User, File };

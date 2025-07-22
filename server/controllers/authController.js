@@ -25,7 +25,8 @@ const register = async (req, res) => {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name
+          name: user.name,
+          role:user.role
         }
       }
     });
@@ -37,6 +38,43 @@ const register = async (req, res) => {
   }
 };
 
-module.exports = {
-  register
+const login = async (req, res) => { 
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) { 
+      return res.status(400).json({message:"Please provide email and password"});
+    };
+
+    let user = await User.findOne({ where: { email } });
+    user = user.dataValues;
+    if (!user) {
+      return res.status(400).json({message:"User not found"});
+    };
+    
+    const isMatch = await bcrypt.compare(password, user.password);
+    
+    if (!isMatch) { 
+      return res.status(400).json({message:"Incorrect password"});
+    };
+    const token = jwt.sign({ id: user.id, role:user.role }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN
+    });
+    res.status(200).json({
+      status: 'success',
+      token,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role:user.role
+        }
+      }
+    });
+  }
+  catch (err) {
+    return res.status(400).json({message:"Some error occured"});
+  }
 };
+
+module.exports = { register, login };
