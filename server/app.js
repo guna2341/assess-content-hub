@@ -1,18 +1,30 @@
-const express = require('express');
 
+// env
 require('dotenv').config();
+
+// imports
+const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
-const app = express();
-app.use(express.json());
-app.use(cookieParser());
 
-app.use('/uploads',express.static(path.join(__dirname,"uploads")));
-
+// port
 const PORT = process.env.PORT || 5000 ;
 
+// initialize app
+const app = express();
+
+// body-parser
+app.use(express.json());
+
+// cookie-parser
+app.use(cookieParser());
+
+// routes
+app.use('/uploads',express.static(path.join(__dirname,"uploads")));
 
 
+
+// start server
 app.listen(PORT, () => {
     console.log(`connected to port :${PORT}`);
 });
