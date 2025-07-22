@@ -89,7 +89,7 @@ export function ReviewsPage() {
 
   return (
     <div className="space-y-6">
-    <QuestionReviewComponent/>
+<QuestionReviewComponent/>
     </div>
   );
 }

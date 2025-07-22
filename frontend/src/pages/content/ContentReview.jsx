@@ -137,7 +137,7 @@ export function ContentReviewComponent() {
                         </div>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="pending">Pending Review</SelectItem>
                         <SelectItem value="published">Published</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
@@ -184,6 +184,15 @@ export function ContentReviewComponent() {
                                 </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                {contentUnit?.imageLink && 
+                                <img src={contentUnit.imageLink} />
+                                }
+                                {contentUnit?.videoLink && 
+                                    <Input
+                                    value={contentUnit?.videoLink}
+                                    
+                                />
+                                }
                                 <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: contentUnit.content }} />
 
                                 {contentUnit.questions && (

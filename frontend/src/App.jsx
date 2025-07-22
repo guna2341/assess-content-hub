@@ -15,7 +15,7 @@ import "./App.css";
 import { ContentViewPage } from "./pages/content/contentViewPage";
 import { ContentEditPage } from "./pages/content/ContentEditPage";
 import { StudentMaterialsPage } from "./pages/students/learningUnits";
-import {AssessmentDetailPage} from "./pages/students/assessmentPage";
+import { AssessmentDetailPage } from "./pages/students/assessmentPage";
 import { AssessmentListPage } from "./pages/students/assessmentList";
 import { AssessmentResultPage } from "./pages/students/result";
 import { AssessmentResultDetailPage } from "./pages/students/resultDetailPage";
@@ -23,21 +23,27 @@ import QuestionCreator from "./pages/question-bank/CreateQuestionBankPage";
 import { CommentsPage } from "./pages/commentsPage";
 import { ProfilePage } from "./pages/profilePage";
 import CreateLearningUnitsPage from "./pages/createLearningUnits";
+import { UnauthorizedPage } from "./pages/auth/unauthorized";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }) {
-  let role = "admin";
-  const routes = [
-    {
-      "admin": ["admin", "reviewer", "student"],
-      "reviewer": ["reviewer", "student"],
-      "student": ["student"]
-    }
-  ];
-  const { isAuthenticated } = useAuthStore();
-  return isAuthenticated ? <div className="h-screen">{children}</div> : <Navigate to="/login" replace />;
+
+function ProtectedRoute({ children, allowedRoles = [] }) {
+  const { isAuthenticated, user } = useAuthStore();
+  console.log(user?.role);
+  
+  if (!isAuthenticated || !user?.role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+    return <Navigate to="/unauthorized" />;
+  }
+
+  return <div className="h-screen">{children}</div>;
 }
+
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -57,43 +63,73 @@ const App = () => (
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
-            {/* Content Management Routes */}
-            <Route path="content" element={<ContentListPage />} />
-            <Route path="content/create" element={<CreateContentPage />} />
-            <Route path="content/:id" element={<ContentViewPage />} />
-            <Route path="content/:id/edit" element={<ContentEditPage />} />
 
-            <Route path="/profile" element={<ProfilePage/>} />
+            <Route path="content" element={
+              <ProtectedRoute allowedRoles={["admin","reviewer"]}>
+              <ContentListPage />
+              </ProtectedRoute>
+              } />
 
-            {/* Question Management Routes */}
+            <Route path="content/create" element={
+              <ProtectedRoute allowedRoles={["admin"]} >
+                <CreateContentPage />
+              </ProtectedRoute>}
+            />
+            <Route path="content/:id" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <ContentViewPage />
+              </ProtectedRoute>} />
+            <Route path="content/:id/edit" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <ContentEditPage />
+              </ProtectedRoute>
+            } />
             <Route path="questions/create" element={
-              <TooltipProvider>
-              <QuestionCreator />
-              </TooltipProvider>
-              } />
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <TooltipProvider>
+                  <QuestionCreator />
+                </TooltipProvider>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/profile" element={<ProfilePage />} />
+
+
             <Route path="question-bank" element={
+              <ProtectedRoute allowedRoles={["admin","reviewer"]}>
               <QuestionBankPage />
-              } />
-            <Route path="reviews" element={<ReviewsPage />} />
+              </ProtectedRoute>
+            } />
+            <Route path="reviews" element={
+              <ProtectedRoute allowedRoles={["admin","reviewer"]}>  
+                <ReviewsPage />
+              </ProtectedRoute>
+            } />
 
             {/* Student Routes */}
             <Route path="learn" element={<StudentMaterialsPage />} />
             <Route path="assessments" element={<AssessmentListPage />} />
-            <Route path="assessment/:assessmentId" element={<AssessmentDetailPage />}/>
+            <Route path="assessment/:assessmentId" element={<AssessmentDetailPage />} />
             <Route path="/results" element={<AssessmentResultPage />} />
             <Route path="/assessment-result/:id" element={<AssessmentResultDetailPage />} />
-            <Route path="learningUnits" element={<CreateLearningUnitsPage/>} />
-            
-            {/* Admin Routes */}
-            <Route path="users" element={<div>Users Management Page</div>} />
-            <Route path="settings" element={<div>Settings Page</div>} />
-            <Route path="comments" element={<CommentsPage/>} />
+            <Route path="learningUnits" element={
+              <ProtectedRoute allowedRoles={["admin","reviewer"]}>
+              <CreateLearningUnitsPage />
+              </ProtectedRoute>
+              } />
+
+            <Route path="comments" element={
+              <ProtectedRoute allowedRoles={["admin","reviewer"]} >
+              <CommentsPage />
+              </ProtectedRoute>
+              } />
           </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          {/* <Route path="*" element={<Navigate to="/login" replace />} /> */}
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
-    </QueryClientProvider>
+  </QueryClientProvider>
 );
 
 export default App;

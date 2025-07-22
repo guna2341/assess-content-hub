@@ -6,7 +6,6 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -24,7 +23,8 @@ import {
     Trash2,
     Upload,
     Save,
-    X
+    X,
+    Link as LinkIcon
 } from "lucide-react";
 
 export default function CreateLearningUnitsPage() {
@@ -33,13 +33,14 @@ export default function CreateLearningUnitsPage() {
     const [selectedType, setSelectedType] = useState("All Types");
     const [isCreating, setIsCreating] = useState(false);
     const [editingId, setEditingId] = useState(null);
-
+    const [uploadOption, setUploadOption] = useState("file");
     // Form state
     const [formData, setFormData] = useState({
         title: "",
         type: "lecture",
         course: "",
-        file: null
+        file: null,
+        videoLink: ""
     });
 
     // Sample data - in real app, this would come from an API
@@ -52,17 +53,18 @@ export default function CreateLearningUnitsPage() {
             uploadDate: "2023-10-15",
             downloadUrl: "#",
             fileSize: "2.5 MB",
-            status: "published"
+            status: "published",
+            contentType: "file" // 'file' or 'link'
         },
         {
             id: "2",
-            title: "Assignment 1: Components",
-            type: "assignment",
+            title: "React Hooks Tutorial",
+            type: "video",
             course: "Web Development",
             uploadDate: "2023-10-18",
-            downloadUrl: "#",
-            fileSize: "1.2 MB",
-            status: "published"
+            videoLink: "https://youtube.com/watch?v=example",
+            status: "published",
+            contentType: "link"
         },
         {
             id: "3",
@@ -72,7 +74,8 @@ export default function CreateLearningUnitsPage() {
             uploadDate: "2023-10-20",
             downloadUrl: "#",
             fileSize: "3.8 MB",
-            status: "draft"
+            status: "draft",
+            contentType: "file"
         },
     ]);
 
@@ -103,8 +106,19 @@ export default function CreateLearningUnitsPage() {
     };
 
     const handleSubmit = () => {
-        if (!formData.title || !formData.course || !formData.file) {
-            alert("Please fill in all required fields and select a file");
+        // Validation
+        if (!formData.title || !formData.course) {
+            alert("Please fill in all required fields");
+            return;
+        }
+
+        if (uploadOption === "file" && !formData.file && !editingId) {
+            alert("Please select a file to upload");
+            return;
+        }
+
+        if (uploadOption === "link" && !formData.videoLink) {
+            alert("Please provide a video link");
             return;
         }
 
@@ -114,10 +128,16 @@ export default function CreateLearningUnitsPage() {
             type: formData.type,
             course: formData.course,
             uploadDate: new Date().toISOString().split('T')[0],
-            downloadUrl: "#",
-            fileSize: formData.file ? `${(formData.file.size / (1024 * 1024)).toFixed(1)} MB` : "0 MB",
-            status: "published"
+            status: "published",
+            contentType: uploadOption
         };
+
+        if (uploadOption === "file") {
+            newMaterial.downloadUrl = "#";
+            newMaterial.fileSize = formData.file ? `${(formData.file.size / (1024 * 1024)).toFixed(1)} MB` : "0 MB";
+        } else {
+            newMaterial.videoLink = formData.videoLink;
+        }
 
         if (editingId) {
             setStudyMaterials(prev =>
@@ -135,8 +155,10 @@ export default function CreateLearningUnitsPage() {
             title: "",
             type: "lecture",
             course: "",
-            file: null
+            file: null,
+            videoLink: ""
         });
+        setUploadOption("file");
         setIsCreating(false);
     };
 
@@ -145,8 +167,10 @@ export default function CreateLearningUnitsPage() {
             title: material.title,
             type: material.type,
             course: material.course,
-            file: null
+            file: null,
+            videoLink: material.videoLink || ""
         });
+        setUploadOption(material.contentType || "file");
         setEditingId(material.id);
         setIsCreating(true);
     };
@@ -164,8 +188,10 @@ export default function CreateLearningUnitsPage() {
             title: "",
             type: "lecture",
             course: "",
-            file: null
+            file: null,
+            videoLink: ""
         });
+        setUploadOption("file");
     };
 
     const toggleStatus = (materialId) => {
@@ -183,24 +209,27 @@ export default function CreateLearningUnitsPage() {
             <div className="flex flex-col space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">Manage Learning Materials</h1>
-                    <div className="flex items-center space-x-4">
-                        <div className="relative w-64">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search materials..."
-                                className="pl-10"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+
+                    {!isCreating &&
+                        <div className="flex items-center space-x-4">
+                            <div className="relative w-64">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search materials..."
+                                    className="pl-10"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <Button
+                                onClick={() => setIsCreating(true)}
+                                className="flex items-center"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Material
+                            </Button>
                         </div>
-                        <Button
-                            onClick={() => setIsCreating(true)}
-                            className="flex items-center"
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Material
-                        </Button>
-                    </div>
+                    }
                 </div>
 
                 {isCreating && (
@@ -256,18 +285,55 @@ export default function CreateLearningUnitsPage() {
                                         </DropdownMenu>
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium mb-2">Content Type *</label>
+                                        <div className="flex space-x-2">
+                                            <Button
+                                                variant={uploadOption === "file" ? "default" : "outline"}
+                                                onClick={() => setUploadOption("file")}
+                                                className="flex-1"
+                                            >
+                                                <Upload className="mr-2 h-4 w-4" />
+                                                Upload File
+                                            </Button>
+                                            <Button
+                                                variant={uploadOption === "link" ? "default" : "outline"}
+                                                onClick={() => setUploadOption("link")}
+                                                className="flex-1"
+                                            >
+                                                <LinkIcon className="mr-2 h-4 w-4" />
+                                                Video Link
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {uploadOption === "file" ? (
+                                    <div>
                                         <label className="block text-sm font-medium mb-2">File <span className="text-red-500">*</span></label>
                                         <div className="relative">
                                             <Input
                                                 type="file"
                                                 onChange={handleFileChange}
-                                                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip"
-                                                className="file:mr-4  file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.mp4,.mov,.avi"
+                                                className="file:mr-4 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                             />
                                             <Upload className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2">Video Link <span className="text-red-500">*</span></label>
+                                        <div className="relative">
+                                            <Input
+                                                value={formData.videoLink}
+                                                onChange={(e) => handleInputChange("videoLink", e.target.value)}
+                                                placeholder="https://youtube.com/watch?v=..."
+                                                className="pl-10"
+                                            />
+                                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex space-x-2">
                                     <Button onClick={handleSubmit} className="flex items-center">
@@ -324,13 +390,13 @@ export default function CreateLearningUnitsPage() {
 
                 <div className="bg-white rounded-lg shadow">
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full rounded-lg overflow-hidden">
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -351,7 +417,21 @@ export default function CreateLearningUnitsPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{material.course}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{material.type}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{material.fileSize}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {material.contentType === "file" ? (
+                                                <span>{material.fileSize}</span>
+                                            ) : (
+                                                <a
+                                                    href={material.videoLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:underline flex items-center"
+                                                >
+                                                    <LinkIcon className="mr-1 h-4 w-4" />
+                                                    Video Link
+                                                </a>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <Button
                                                 variant="outline"
