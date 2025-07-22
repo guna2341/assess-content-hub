@@ -7,11 +7,6 @@ const path = require('path');
 const sequelize = require('./db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const fileRoutes = require('./routes/fileRoutes');
-const userRoutes = require('./routes/userRoutes');
-
 const app = express();
 
 // Middleware
@@ -50,10 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/users', userRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
-});
+
 
 // Error handling middleware
 app.use(notFound);

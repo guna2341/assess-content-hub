@@ -4,16 +4,17 @@ const jwt = require('jsonwebtoken');
 
 const register = async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, role } = req.body;
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.create({
       email,
       password: hashedPassword,
-      name
+      name,
+      role
     });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, role:role }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN
     });
 

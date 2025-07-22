@@ -34,11 +34,12 @@ module.exports = (sequelize) => {
     name: DataTypes.STRING,
     role: {
       type: DataTypes.STRING,
-      defaultValue: 'user'
+      defaultValue: 'student'
     }
   }, {
     sequelize,
     modelName: 'User',
+    freezeTableName: true,
     timestamps: true,
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
