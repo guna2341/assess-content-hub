@@ -1,13 +1,29 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import secureLocalStorage from "react-secure-storage";
+import AUTH_SERVICES from '../api/services/auth';
 
 export const useAuthStore = create(
-  persist(
     (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      login: (user, token) => set({ user, token, isAuthenticated: true }),
+      user: secureLocalStorage.getItem('user') ? JSON.parse(secureLocalStorage.getItem('user')) : null,
+      token: secureLocalStorage.getItem('token') ? secureLocalStorage.getItem('token') : null,
+      isAuthenticated: secureLocalStorage.getItem('isAuthenticated') ? JSON.parse(secureLocalStorage.getItem('isAuthenticated')) : false,
+    
+    login: async (user) => {
+      try {
+        const response = await AUTH_SERVICES.LOGIN(user);
+        const token = response?.data?.token;
+        const userInfo = response?.data?.data?.user;
+        secureLocalStorage.setItem("user", JSON.stringify(userInfo));
+        secureLocalStorage.setItem("token", token);
+        secureLocalStorage.setItem("isAuthenticated", true);
+        set({ user: userInfo, token, isAuthenticated: true });
+        return { status: true, message: "Login successful" };
+      }
+      catch (error) { 
+        return {status:false, message: error?.data?.message || "Login failed" };
+      }
+    },
+
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
       updateUser: (userData) =>
         set((state) => ({
@@ -17,5 +33,4 @@ export const useAuthStore = create(
     {
       name: 'auth-storage', 
     }
-  )
 );

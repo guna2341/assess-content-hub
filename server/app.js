@@ -1,57 +1,64 @@
-require('dotenv').config();
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
-const morgan = require('morgan');
-const path = require('path');
-const { sequelize } = require('./config/db'); 
-const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+// env
+require("dotenv").config();
+
+// packages
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const morgan = require("morgan");
+const path = require("path");
+
+// Models
+const { sequelize, User } = require("./config/db");
+
+// Port
 const PORT = process.env.PORT || 5000;
 
-const authRoutes = require('./routes/authRoutes');
-
-const app = express();
-
-// Middleware
-app.use(cors({
-  origin: "*",
-  credentials: true
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Logging
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// Error handlers
+const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 // Routes
-// app.use('/auth', authRoutes);
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
-// Test DB connection
+// Initialize Express
+const app = express();
+
+// DB connection
 const testConnection = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Database connected');
-    
+    console.log("Database connected");
+
     // Sync models (alter: true for development, remove for production)
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
-    console.log('Models synced');
+    await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
+    console.log("Models synced");
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error("Database connection error:", error);
   }
 };
-
 testConnection();
 
-// Routes
-app.use('/auth', authRoutes);
+// Middleware
+app.use(cors({ origin: "*", credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use('/', (req,res) => {
-    res.json({ message: 'Welcome to the API' });
-})
+// Logging requests
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+}
+
+// Routes
+app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
+app.use("/users", async (req, res) => {
+  const users = await User.findAll();
+  return res.json({ users: users });
+});
+app.use(express.static(path.join(__dirname, "public")));
 
 // Error handling middleware
 app.use(notFound);

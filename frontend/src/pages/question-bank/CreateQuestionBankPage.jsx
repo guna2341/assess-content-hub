@@ -368,7 +368,7 @@ export default function QuestionCreator() {
             const hasHiddenChildren = topic.children?.length > 0 && !expandedTopics.includes(topic.id);
 
             return (
-                <div key={topic.id} className={`${level > 0 ? 'ml-2 pl-1 border-l-2 border-gray-200' : ''}`}>
+                <div key={topic.id} className={`${level > 0 ? 'ml-2 pl-4 border-gray-200' : ''}`}>
                     <div className="flex items-center gap-1 group py-1">
                         <Collapsible
                             open={expandedTopics.includes(topic.id)}
@@ -379,25 +379,19 @@ export default function QuestionCreator() {
                                 <CollapsibleTrigger asChild>
                                     <Button
                                         variant={activeTopic === topic.id ? 'default' : 'ghost'}
-                                        className={`w-full justify-start h-auto p-2 font-normal min-w-0 ${level > 0 ? 'pl-2' : ''
+                                        className={`w-full justify-start h-auto  p-2 font-normal min-w-0 ${level > 0 ? 'pl-2' : ''
                                             }`}
                                         onClick={() => setActiveTopic(topic.id)}
                                     >
                                         <div className="flex items-center min-w-0">
-                                            {topic.children?.length > 0 ? (
+                                            {topic.children?.length > 0 && (
                                                 expandedTopics.includes(topic.id) ? (
                                                     <ChevronDown className="h-4 w-4 mr-1 flex-shrink-0" />
                                                 ) : (
                                                     <ChevronRight className="h-4 w-4 mr-1 flex-shrink-0" />
                                                 )
-                                            ) : (
-                                                <FileText className="h-4 w-4 mr-1 flex-shrink-0" />
-                                            )}
-                                            {expandedTopics.includes(topic.id) ? (
-                                                <FolderOpen className="h-4 w-4 mr-1 flex-shrink-0" />
-                                            ) : (
-                                                <Folder className="h-4 w-4 mr-1 flex-shrink-0" />
-                                            )}
+                                            )
+                                            }
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <span className="truncate">{topic.name}</span>
