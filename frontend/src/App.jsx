@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
@@ -25,23 +25,24 @@ import { ProfilePage } from "./pages/profilePage";
 import CreateLearningUnitsPage from "./pages/createLearningUnits";
 import { UnauthorizedPage } from "./pages/auth/unauthorized";
 import { NotFoundPage } from "./pages/auth/notFound";
+import './api/interceptors/request'
+import './api/interceptors/response';
+import './api/utils/handleApiError';
 
 const queryClient = new QueryClient();
 
 
 function ProtectedRoute({ children, allowedRoles = [] }) {
-  const { isAuthenticated, user } = useAuthStore();
-  console.log(user?.role);
-  
-  if (!isAuthenticated || !user?.role) {
+  const { isAuthenticated, user, token } = useAuthStore();
+
+  if (!isAuthenticated || !token) {
     return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/unauthorized" />;
   }
-
-  return <div className="h-screen">{children}</div>;
+    return <div className="h-screen">{children}</div>;
 }
 
 

@@ -1,62 +1,53 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Mail, Lock, UserCheck } from 'lucide-react';
+import { BookOpen, Mail, Lock } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "@/components/ui/use-toast";
+
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState ('student');
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
-  const { login } = useAuthStore();
-  const { toast } = useToast();
-
+  const { login, token } = useAuthStore();
+  
+  useEffect(() => { 
+    if (token) {
+      navigate('/dashboard');
+    }
+  }, []);
+  
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      const mockUser = {
-        id: '1',
-        email,
-        name: email.split('@')[0].replace(/[^a-zA-Z ]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        role,
-      };
-
-      login(mockUser, 'mock-token-123');
-
-      toast({
-        title: 'Welcome back!',
-        description: `Logged in as ${role}`,
-      });
-
-      navigate('/dashboard');
-      setLoading(false);
-    }, 1000);
-  };
-
-  const quickLogin = (userRole) => {
-    const users = {
-      admin: { email: 'admin@contenthub.com', name: 'Admin' },
-      student: { email: 'student@contenthub.com', name: 'Student' },
-      reviewer: { email: 'reviewer@contenthub.com', name: 'Reviewer' },
-    };
-    console.log(userRole);
+    const response = await login({ email, password });
+    console.log("login:",response);
     
-    const user = users[userRole];
-    login({ id: '1', ...user, role: userRole }, 'mock-token-123');
-    navigate('/dashboard');
+    if (response?.status) {
+      toast({
+        title: response?.message,
+        description: 'Welcome back!',
+        variant: 'success',
+        position:"top-center"
+      });
+       navigate('/dashboard');
+    }
+    else {
+      toast({
+        title: response?.message,
+        description: 'Please check your credentials',
+        variant: 'error'
+      });
+    }
+    setLoading(false);
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -123,48 +114,10 @@ export function LoginPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={(value) => setRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="reviewer">Reviewer</SelectItem>
-                    <SelectItem value="admin">Administrator</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Quick Demo Login</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" size="sm" onClick={() => quickLogin('admin')}>
-                <UserCheck className="h-3 w-3 mr-1" />
-                Admin
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => quickLogin('reviewer')}>
-                <UserCheck className="h-3 w-3 mr-1" />
-                Reviewer
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => quickLogin('student')}>
-                <UserCheck className="h-3 w-3 mr-1" />
-                Student
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>

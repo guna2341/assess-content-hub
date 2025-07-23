@@ -2,9 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   BookOpen,
   FileText,
-  Users,
   BarChart3,
-  Settings,
   CheckSquare,
   PlusCircle,
   Library,
@@ -16,14 +14,16 @@ import { useAuthStore } from "../../stores/authStore";
 
 export function Sidebar() {
   const { user } = useAuthStore();
-
+  console.log(user);
+  
   const adminNavItems = [
     { to: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { to: '/content', icon: BookOpen, label: 'Content Units' },
     { to: '/content/create', icon: PlusCircle, label: 'Create Unit' },
     { to: '/questions/create', icon: FileText, label: 'Create Questions' },
     { to: '/question-bank', icon: Library, label: 'Question Bank' },
-    { to: '/learningUnits',icon:NotebookIcon,label:"Learning Units"},
+    { to: '/learningUnits', icon: NotebookIcon, label: "Learning Units" },
+    { to: "/comments", icon: MessageSquare, label: "Comments" },
     { to: '/reviews', icon: CheckSquare, label: 'Reviews' }
   ];
 
