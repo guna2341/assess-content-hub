@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,18 +15,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  FileText, 
-  Video, 
-  Image as ImageIcon,
+import {
+  Search,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
   BookOpen,
-  Users,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -42,61 +37,22 @@ export function ContentListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [languageFilter, setLanguageFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-
   const contentUnits = useAdminContentStore(state => state.content);
   const deleteContent = useAdminContentStore(state => state.deleteContent);
   const { user } = useAuthStore();
-  function handleDeleteUnit(action,id) { 
+  const { getContent } = useAdminContentStore();
+  const [page, setPage] = useState(0);
+  
+  useEffect(() => { 
+    async function content() {
+
+    };
+    content();
+  }, []);
+
+  const handleDeleteUnit = (action, id) => {
     if (action === "delete") {
       deleteContent(id);
-    }
-  };
-
-  const getContentTypeIcon = (type) => {
-    switch (type) {
-      case 'video': return Video;
-      case 'image': return ImageIcon;
-      default: return FileText;
-    }
-  };
-
-  const getContentTypeColor = (type) => {
-    switch (type) {
-      case 'video': return 'bg-secondary/10 text-secondary';
-      case 'image': return 'bg-accent/10 text-accent';
-      default: return 'bg-primary/10 text-primary';
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'approved':
-      case 'published':
-        return 'bg-success/10 text-success';
-      case 'pending':
-        return 'bg-warning/10 text-warning';
-      case 'rejected':
-        return 'bg-destructive/10 text-destructive';
-      case 'needs edit':
-        return 'bg-blue-100 text-blue-600';
-      default:
-        return 'bg-muted/10 text-muted-foreground';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved':
-      case 'published':
-        return CheckCircle;
-      case 'pending':
-        return Clock;
-      case 'rejected':
-        return XCircle;
-      case 'needs edit':
-        return Pencil;
-      default:
-        return AlertCircle;
     }
   };
 
@@ -108,14 +64,49 @@ export function ContentListPage() {
     }
   };
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'published':
+        return <Badge variant="outline" className="bg-green-100 text-green-800">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Published
+        </Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+          <Clock className="h-3 w-3 mr-1" />
+          Pending
+        </Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-red-100 text-red-800">
+          <XCircle className="h-3 w-3 mr-1" />
+          Rejected
+        </Badge>;
+      case 'needs edit':
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800">
+          <Pencil className="h-3 w-3 mr-1" />
+          Needs Edit
+        </Badge>;
+      default:
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800">
+          <Pencil className="h-3 w-3 mr-1" />
+          Draft
+        </Badge>;
+    }
+  };
+
+  // Filter content units based on search, language and status filters
   const filteredUnits = contentUnits.filter(unit => {
     const matchesSearch = unit.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         unit.code.toLowerCase().includes(searchQuery.toLowerCase());
+      unit.code.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesLanguage = languageFilter === 'all' || unit.language === languageFilter;
     const matchesStatus = statusFilter === 'all' || unit.status === statusFilter;
-    
     return matchesSearch && matchesLanguage && matchesStatus;
   });
+
+  // Calculate stats
+  const totalUnits = contentUnits.length;
+  const publishedUnits = contentUnits.filter(u => u.status === 'published').length;
+  const pendingUnits = contentUnits.filter(u => u.status === 'pending').length;
 
   return (
     <div className="space-y-6">
@@ -145,7 +136,7 @@ export function ContentListPage() {
                 className="pl-9"
               />
             </div>
-            
+
             <div className="flex gap-2">
               <Select value={languageFilter} onValueChange={setLanguageFilter}>
                 <SelectTrigger className="w-[130px]">
@@ -160,18 +151,18 @@ export function ContentListPage() {
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-[130px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="pending">In Review</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="needs edit">Needs Edit</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
                 </SelectContent>
               </Select>
-            </div>  
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -184,123 +175,113 @@ export function ContentListPage() {
               <BookOpen className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Total Units</span>
             </div>
-            <p className="text-2xl font-bold mt-1">{contentUnits.length}</p>
+            <p className="text-2xl font-bold mt-1">{totalUnits}</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-card border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
               <span className="text-sm font-medium">Published</span>
             </div>
-            <p className="text-2xl font-bold mt-1">
-              {contentUnits.filter(u => u.status === 'published').length}
-            </p>
+            <p className="text-2xl font-bold mt-1">{publishedUnits}</p>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-card border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-warning" />
-              <span className="text-sm font-medium">In Review</span>
+              <span className="text-sm font-medium">Pending Review</span>
             </div>
-            <p className="text-2xl font-bold mt-1">
-              {contentUnits.filter(u => u.reviewStatus != "completed").length}
-            </p>
+            <p className="text-2xl font-bold mt-1">{pendingUnits}</p>
           </CardContent>
         </Card>
-        
       </div>
 
       {/* Units List */}
       <div className="space-y-4">
-        {filteredUnits.map((unit) => {
-          const ContentIcon = getContentTypeIcon(unit.contentType);
-          const StatusIcon = getStatusIcon(unit.status);
-          
-          return (
-            <Card key={unit.id} className="bg-gradient-card border-0 shadow-soft hover:shadow-medium transition-all duration-200">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant="outline" className="bg-muted/20">
-                        {unit.code}
-                      </Badge>
-                      <Badge variant="outline" className={getStatusColor(unit.status)}>
-                        <StatusIcon className="h-3 w-3 mr-1" />
-                        {unit.status}
-                      </Badge>
-                      <Badge variant="outline">
-                        {getLanguageLabel(unit.language)}
-                      </Badge>
+        {filteredUnits.map((unit) => (
+          <Card key={unit.id} className="bg-gradient-card border-0 shadow-soft hover:shadow-medium transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge variant="outline" className="bg-muted/20">
+                      {unit.code}
+                    </Badge>
+                    <Badge variant="outline">
+                      {getLanguageLabel(unit.language)}
+                    </Badge>
+                    {unit.status && getStatusBadge(unit.status)}
+                  </div>
+
+                  <h3 className="text-lg font-semibold mb-1">{unit.title}</h3>
+                  <p className="text-muted-foreground text-sm mb-3">{unit.description}</p>
+
+                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <div>
+                      <span>By {unit.createdBy}</span>
                     </div>
-                    
-                    <h3 className="text-lg font-semibold mb-1">{unit.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-3">{unit.description}</p>
-                    
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                      <div>
-                        <span>By {unit.createdBy}</span>
-                      </div>
-                      <div>
-                        <span>Updated {unit.updatedAt}</span>
-                      </div>
+                    <div>
+                      <span>Updated {unit.updatedAt}</span>
+                    </div>
+                    <div>
+                      <span>{unit.questions?.length || 0} questions</span>
                     </div>
                   </div>
-                  {user == "admin" ?
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}`)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}/edit`)}>
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                   
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Unit</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this content unit?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteUnit('delete', unit.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-
-                    </div>
-                    :
-                    <div>
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/reviews`)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
-                      </div>
-                  }
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+
+                {user.role === "admin" ? (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}`)}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}/edit`)}>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Unit</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this content unit?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteUnit('delete', unit.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                ) : (
+                  <div>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/reviews`)}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Review
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {filteredUnits.length === 0 && (
@@ -309,7 +290,7 @@ export function ContentListPage() {
             <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No learning units found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || languageFilter !== 'all' || statusFilter !== 'all' 
+              {searchQuery || languageFilter !== 'all' || statusFilter !== 'all'
                 ? 'Try adjusting your search filters'
                 : 'Create your first learning unit to get started'
               }

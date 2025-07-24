@@ -1,8 +1,14 @@
     import { create } from "zustand";
     import { contentUnits } from "../../utils/admin";
+import ADMIN_SERVICES from "../../api/services/admin";
     
     export const useAdminContentStore = create((set, get) => ({
         content: contentUnits,
+
+        getContent: async (params) => {
+            const response = await ADMIN_SERVICES.getContent(params);
+            console.log(response);
+        },
 
         editContent: (data) => {        
             const newData = {

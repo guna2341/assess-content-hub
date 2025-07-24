@@ -20,22 +20,35 @@ export const contentUnits = [
         questionType: "content",
         language: 'en',
         explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
-        status: 'published',
         createdAt: '2024-01-15',
         updatedAt: '2024-01-20',
-        createdBy: 'Dr. Smith',
         totalReviews: 3,
         minimumReviews: 3,
         questions:
+        [
         {
             id: 'q1',
             question: 'What is a variable in algebra?',
             type: 'Short Answer',
-            topic: 'variables',
+                topic: 'variables',
+                status: 'published',
             difficulty: 'Easy',
             correctAnswer: 'A symbol that represents a number that can change.',
-            explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
-        },
+                explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+                createdBy: 'Dr. Smith',
+                },
+                {
+                    id: 'q1',
+                    question: 'What is a variable in algebra?',
+                    type: 'Short Answer',
+                    topic: 'variables',
+                    status: 'published',
+                    difficulty: 'Easy',
+                    correctAnswer: 'A symbol that represents a number that can change.',
+                    explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+                    createdBy: 'Dr. Smith',
+                }
+        ]
     },
     {
         id: '2',
@@ -53,7 +66,6 @@ export const contentUnits = [
     `,
         language: 'ta',
         explanation: 'This unit teaches the basics of angles and their types in Tamil.',
-        status: 'rejected',
         questionsCount: 8,
         studentsEnrolled: 38,
         createdAt: '2024-02-01',
@@ -62,18 +74,20 @@ export const contentUnits = [
         questionType: "content",
         totalRevies: 3,
         minimumReviews: 3,
-        questions:
+        questions:[
         {
             id: 'q3',
             question: 'கோணம் என்றால் என்ன?',
             type: 'Long Answer',
-            topic: 'angles',
+                topic: 'angles',
+                status: 'published',
             difficulty: 'Easy',
             correctAnswer: 'இரண்டு ரேகைகள் சந்திக்கும் இடத்தில் உருவாகும் வடிவம்.',
             explanation: 'An angle is formed at the intersection of two lines.',
             createdBy: 'Dr. Kumar',
             createdAt: '2024-02-01'
-        }
+            }
+        ]
     },
     {
         id: '3',
@@ -92,7 +106,6 @@ export const contentUnits = [
     `,
         language: 'hi',
         explanation: 'This unit introduces trigonometry and its basic ratios in Hindi.',
-        status: 'pending',
         questionsCount: 10,
         studentsEnrolled: 41,
         createdAt: '2024-03-01',
@@ -101,18 +114,20 @@ export const contentUnits = [
         questionType: "content",
         totalRevies: 2,
         minimumReviews: 3,
-        questions:
+        questions:[
         {
             id: 'q4',
             question: 'त्रिकोणमिति में साइन क्या दर्शाता है?',
             type: 'Short Answer',
-            topic: 'trigonometry',
+                topic: 'trigonometry',
+                status: 'published',
             difficulty: 'Medium',
             correctAnswer: 'विपरीत भुजा और कर्ण का अनुपात',
             explanation: 'In trigonometry, sine is the ratio of the opposite side to the hypotenuse.',
             createdBy: 'Dr. Mehta',
             createdAt: '2024-03-01'
-        }
+            }
+        ]
     },
     {
         id: '4',
@@ -123,7 +138,6 @@ export const contentUnits = [
         imageLink: "https://tse2.mm.bing.net/th/id/OIP.7cRYFyLoDEDh4sRtM73vvwHaDg?pid=Api&P=0&h=180",
         language: 'en',
         explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
-        status: 'approved',
         questionsCount: 12,
         studentsEnrolled: 45,
         createdAt: '2024-01-15',
@@ -132,7 +146,7 @@ export const contentUnits = [
         questionType: "content",
         totalReviews: 3,
         minimumReviews: 3,
-        questions:
+        questions:[
         {
             id: 'q1',
             question: 'What is a variable in algebra?',
@@ -165,8 +179,10 @@ export const contentUnits = [
             correctAnswer: 'a',
             explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
             createdBy: 'Dr. Smith',
-            createdAt: '2024-01-15'
-        },
+                createdAt: '2024-01-15'
+            
+            },
+        ]
     },
     {
         id: '5',
@@ -186,11 +202,13 @@ export const contentUnits = [
         questionType: "content",
         totalReviews: 3,
         minimumReviews: 3,
-        questions:
+        questions:[
         {
             id: 'q1',
             question: 'What is a variable in algebra?',
-            type: 'Multiple Choice',
+
+                status: 'published',
+                type: 'Multiple Choice',
             options: [
                 {
                     id: "a0018813-3476-4440-a27c-a4d5ed8b2933",
@@ -220,7 +238,8 @@ export const contentUnits = [
             explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
             createdBy: 'Dr. Smith',
             createdAt: '2024-01-15'
-        },
+            },
+        ]
     }
 ];
 

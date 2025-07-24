@@ -12,9 +12,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import secureLocalStorage from 'react-secure-storage';
 
 export function Header() {
   const { user, logout } = useAuthStore();
+  secureLocalStorage.clear();
   const nav = useNavigate();
 
   function handleNavigate() {

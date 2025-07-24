@@ -6,6 +6,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const morgan = require("morgan");
+const bcrypt = require("bcryptjs");
 const path = require("path");
 
 // Models
@@ -33,6 +34,17 @@ const testConnection = async () => {
     // Sync models (alter: true for development, remove for production)
     await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
     console.log("Models synced");
+    const user = await User.findByPk(1);
+    if (!user) {
+      const password = await bcrypt.hashSync("12345", 12);
+      await User.create({
+        email: "admin@gmail.com",
+        password: password,
+        name: "admin",
+        role: "admin",
+      });
+      console.log("Admin user created");
+    }
   } catch (error) {
     console.error("Database connection error:", error);
   }

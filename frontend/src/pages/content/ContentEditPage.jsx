@@ -12,6 +12,7 @@ import {
     Trash2,
     HelpCircle,
     Plus,
+    CheckCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { useAdminContentStore } from '../../zustand/admin/contentUnits';
+import { Badge } from '@/components/ui/badge';
 
 export function ContentEditPage() {
     const { id } = useParams();
@@ -40,24 +42,16 @@ export function ContentEditPage() {
         title: '',
         code: '',
         content: '',
+        description: '',
         imageLink: '',
         videoLink: '',
         explanation: '',
         language: 'en',
         status: 'draft',
         contentType: 'html',
-        questions: {
-            id: '',
-            question: '',
-            type: 'Short Answer',
-            topic: '',
-            difficulty: 'Easy',
-            correctAnswer: '',
-            explanation: '',
-            options: []
-        }
+        questions: []
     });
-    
+
     useEffect(() => {
         if (unit) {
             setFormValues({
@@ -65,24 +59,27 @@ export function ContentEditPage() {
                 title: unit.title,
                 code: unit.code,
                 content: unit.content || '',
-                description:unit.description,
+                description: unit.description || '',
                 imageLink: unit.imageLink || '',
                 videoLink: unit.videoLink || '',
                 explanation: unit.explanation || '',
                 language: unit.language || 'en',
-                status: unit.status || 'draft',
                 contentType: unit.contentType || 'html',
-                questions: unit.questions ? {
-                    id: unit.questions.id || '',
-                    question: unit.questions.question || '',
-                    type: unit.questions.type || 'Short Answer',
-                    topic: unit.questions.topic || '',
-                    difficulty: unit.questions.difficulty || 'Easy',
-                    correctAnswer: unit.questions.correctAnswer || '',
-                    explanation: unit.questions.explanation || '',
-                    options: unit.questions.options || []
-                } : {
-                    id: '',
+                questions: unit.questions?.length > 0 ? unit.questions.map(q => ({
+                    id: q.id || crypto.randomUUID(),
+                    question: q.question || '',
+                    type: q.type || 'Short Answer',
+                    topic: q.topic || '',
+                    difficulty: q.difficulty || 'Easy',
+                    correctAnswer: q.correctAnswer || '',
+                    explanation: q.explanation || '',
+                    options: q.options?.length > 0 ? q.options.map(opt => ({
+                        id: opt.id || crypto.randomUUID(),
+                        text: opt.text || '',
+                        isCorrect: opt.isCorrect || false
+                    })) : []
+                })) : [{
+                    id: crypto.randomUUID(),
                     question: '',
                     type: 'Short Answer',
                     topic: '',
@@ -90,7 +87,7 @@ export function ContentEditPage() {
                     correctAnswer: '',
                     explanation: '',
                     options: []
-                }
+                }]
             });
         }
     }, [unit]);
@@ -103,31 +100,46 @@ export function ContentEditPage() {
         }));
     };
 
-    const handleNestedInputChange = (e, parentField) => {
-        const { name, value } = e.target;
-        setFormValues(prev => ({
-            ...prev,
-            [parentField]: {
-                ...prev[parentField],
-                [name]: value
-            }
-        }));
+    const handleQuestionChange = (questionIndex, field, value) => {
+        setFormValues(prev => {
+            const updatedQuestions = [...prev.questions];
+            updatedQuestions[questionIndex] = {
+                ...updatedQuestions[questionIndex],
+                [field]: value
+            };
+            return {
+                ...prev,
+                questions: updatedQuestions
+            };
+        });
+    };
+
+    const handleOptionChange = (questionIndex, optionIndex, field, value) => {
+        setFormValues(prev => {
+            const updatedQuestions = [...prev.questions];
+            const updatedOptions = [...updatedQuestions[questionIndex].options];
+
+            updatedOptions[optionIndex] = {
+                ...updatedOptions[optionIndex],
+                [field]: value
+            };
+
+            updatedQuestions[questionIndex] = {
+                ...updatedQuestions[questionIndex],
+                options: updatedOptions
+            };
+
+            return {
+                ...prev,
+                questions: updatedQuestions
+            };
+        });
     };
 
     const handleSelectChange = (value, name) => {
         setFormValues(prev => ({
             ...prev,
             [name]: value
-        }));
-    };
-
-    const handleNestedSelectChange = (value, parentField, name) => {
-        setFormValues(prev => ({
-            ...prev,
-            [parentField]: {
-                ...prev[parentField],
-                [name]: value
-            }
         }));
     };
 
@@ -175,48 +187,78 @@ export function ContentEditPage() {
         }));
     };
 
-    const handleAddOption = () => {
-        if (formValues.questions.options.length >= 6) return;
+    const handleAddOption = (questionIndex) => {
+        setFormValues(prev => {
+            const updatedQuestions = [...prev.questions];
+            if (updatedQuestions[questionIndex].options.length >= 6) return prev;
 
-        setFormValues(prev => ({
-            ...prev,
-            questions: {
-                ...prev.questions,
+            updatedQuestions[questionIndex] = {
+                ...updatedQuestions[questionIndex],
                 options: [
-                    ...prev.questions.options,
+                    ...updatedQuestions[questionIndex].options,
                     { id: crypto.randomUUID(), text: '', isCorrect: false }
                 ]
-            }
-        }));
+            };
+
+            return {
+                ...prev,
+                questions: updatedQuestions
+            };
+        });
     };
 
-    const handleRemoveOption = (index) => {
-        if (formValues.questions.options.length <= 2) return;
+    const handleRemoveOption = (questionIndex, optionIndex) => {
+        setFormValues(prev => {
+            const updatedQuestions = [...prev.questions];
+            if (updatedQuestions[questionIndex].options.length <= 2) return prev;
 
-        const newOptions = formValues.questions.options.filter((_, i) => i !== index);
-        setFormValues(prev => ({
-            ...prev,
-            questions: {
-                ...prev.questions,
+            const newOptions = updatedQuestions[questionIndex].options.filter((_, i) => i !== optionIndex);
+
+            updatedQuestions[questionIndex] = {
+                ...updatedQuestions[questionIndex],
                 options: newOptions,
-                correctAnswer: prev.questions.correctAnswer === String.fromCharCode(65 + index) ? '' : prev.questions.correctAnswer
-            }
+                correctAnswer: updatedQuestions[questionIndex].correctAnswer === String.fromCharCode(97 + optionIndex) ? '' : updatedQuestions[questionIndex].correctAnswer
+            };
+
+            return {
+                ...prev,
+                questions: updatedQuestions
+            };
+        });
+    };
+
+    const handleAddQuestion = () => {
+        setFormValues(prev => ({
+            ...prev,
+            questions: [
+                ...prev.questions,
+                {
+                    id: crypto.randomUUID(),
+                    question: '',
+                    type: 'Short Answer',
+                    topic: '',
+                    difficulty: 'Easy',
+                    correctAnswer: '',
+                    explanation: '',
+                    options: []
+                }
+            ]
         }));
     };
 
-    const handleOptionChange = (index, field, value) => {
-        const newOptions = [...formValues.questions.options];
-        newOptions[index] = {
-            ...newOptions[index],
-            [field]: value
-        };
+    const handleRemoveQuestion = (questionIndex) => {
+        if (formValues.questions.length <= 1) {
+            toast({
+                title: "Cannot remove last question",
+                description: "Each unit must have at least one question",
+                variant: "destructive"
+            });
+            return;
+        }
 
         setFormValues(prev => ({
             ...prev,
-            questions: {
-                ...prev.questions,
-                options: newOptions
-            }
+            questions: prev.questions.filter((_, i) => i !== questionIndex)
         }));
     };
 
@@ -229,7 +271,6 @@ export function ContentEditPage() {
 
     const onSubmit = () => {
         editContent(formValues);
-
         toast({
             title: "Content updated successfully",
             description: `"${formValues.title}" has been saved.`,
@@ -277,14 +318,14 @@ export function ContentEditPage() {
                     <CardHeader>
                         <div className="flex flex-col flex-wrap md:hidden gap-2 items">
                             <p className='text-md font-semibold'>Code:</p>
-                        <Input
-                            name="code"
-                            placeholder="Code"
-                            className="w-auto"
-                            value={formValues.code}
-                            onChange={handleInputChange}
-                        />
-                    </div>
+                            <Input
+                                name="code"
+                                placeholder="Code"
+                                className="w-auto"
+                                value={formValues.code}
+                                onChange={handleInputChange}
+                            />
+                        </div>
                         <div className="flex flex-col md:flex-row justify-between gap-6">
                             <div className="space-y-4">
                                 <div className='flex flex-col gap-2'>
@@ -300,7 +341,6 @@ export function ContentEditPage() {
                                 <div className='flex flex-col gap-2'>
                                     <p className='text-md'>SubHeading:</p>
                                     <div className='w-[500px]'>
-                                        
                                         <Textarea
                                             name="description"
                                             placeholder="Brief description of the content"
@@ -417,13 +457,12 @@ export function ContentEditPage() {
                                     <div className="space-y-2">
                                         <label>Text Content</label>
                                         <RichTextEditor
-                                            key={formValues.id} 
+                                            key={formValues.id}
                                             content={formValues.content}
                                             onChange={handleContentChange}
                                             placeholder="Enter your learning content here (supports HTML)"
                                             className="min-h-[300px]"
                                         />
-
                                     </div>
 
                                     <div className="space-y-2">
@@ -440,171 +479,185 @@ export function ContentEditPage() {
                             </TabsContent>
 
                             <TabsContent value="questions">
-                                <div className="mt-4">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="flex items-center gap-2">
-                                                <HelpCircle className="h-5 w-5" />
-                                                Question Editor
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label>Question Text</label>
-                                                <Textarea
-                                                    name="question"
-                                                    placeholder="Enter the question text"
-                                                    className="min-h-[80px]"
-                                                    value={formValues.questions.question}
-                                                    onChange={(e) => handleNestedInputChange(e, 'questions')}
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="mt-4 space-y-6">
+                                    {formValues.questions.map((question, qIndex) => (
+                                        <Card key={question.id}>
+                                            <CardHeader className="flex flex-row justify-between items-center">
+                                                <CardTitle className="flex items-center gap-2">
+                                                    <HelpCircle className="h-5 w-5" />
+                                                    Question {qIndex + 1}
+                                                </CardTitle>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleRemoveQuestion(qIndex)}
+                                                    disabled={formValues.questions.length <= 1}
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-1" />
+                                                    Remove
+                                                </Button>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <label>Type</label>
-                                                    <Select
-                                                        value={formValues.questions.type}
-                                                        onValueChange={(value) => {
-                                                            handleNestedSelectChange(value, 'questions', 'type');
-                                                            if (value !== 'Multiple Choice') {
-                                                                setFormValues(prev => ({
-                                                                    ...prev,
-                                                                    questions: {
-                                                                        ...prev.questions,
-                                                                        options: []
-                                                                    }
-                                                                }));
-                                                            }
-                                                        }}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select question type" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="Short Answer">Short Answer</SelectItem>
-                                                            <SelectItem value="Multiple Choice">Multiple Choice</SelectItem>
-                                                            <SelectItem value="Long Answer">Long Answer</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <label>Topic</label>
-                                                    <Input
-                                                        name="topic"
-                                                        placeholder="Enter topic"
-                                                        value={formValues.questions.topic}
-                                                        onChange={(e) => handleNestedInputChange(e, 'questions')}
+                                                    <label>Question Text</label>
+                                                    <Textarea
+                                                        name="question"
+                                                        placeholder="Enter the question text"
+                                                        className="min-h-[80px]"
+                                                        value={question.question}
+                                                        onChange={(e) => handleQuestionChange(qIndex, 'question', e.target.value)}
                                                     />
                                                 </div>
 
-                                                <div className="space-y-2">
-                                                    <label>Difficulty</label>
-                                                    <Select
-                                                        value={formValues.questions.difficulty}
-                                                        onValueChange={(value) => handleNestedSelectChange(value, 'questions', 'difficulty')}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select difficulty" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="Easy">Easy</SelectItem>
-                                                            <SelectItem value="Medium">Medium</SelectItem>
-                                                            <SelectItem value="Hard">Hard</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
-
-                                            {formValues.questions.type === 'Multiple Choice' && (
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <label>Answer Options (Minimum 2, Maximum 6)</label>
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={handleAddOption}
-                                                            disabled={formValues.questions.options.length >= 6}
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label>Type</label>
+                                                        <Select
+                                                            value={question.type}
+                                                            onValueChange={(value) => {
+                                                                handleQuestionChange(qIndex, 'type', value);
+                                                                if (value !== 'Multiple Choice') {
+                                                                    handleQuestionChange(qIndex, 'options', []);
+                                                                }
+                                                            }}
                                                         >
-                                                            <Plus className="h-4 w-4 mr-1" />
-                                                            Add Option
-                                                        </Button>
-                                                    </div>
-
-                                                    <div className="space-y-3">
-                                                        {formValues.questions.options.map((option, index) => (
-                                                            <div key={option.id} className="flex items-center gap-2">
-                                                                <span className="text-sm font-medium w-6">
-                                                                    {String.fromCharCode(65 + index)}.
-                                                                </span>
-                                                                <Input
-                                                                    placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                                                                    value={option.text}
-                                                                    onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                                                                    className="flex-1"
-                                                                />
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => handleRemoveOption(index)}
-                                                                    disabled={formValues.questions.options.length <= 2}
-                                                                >
-                                                                    <X className="h-4 w-4" />
-                                                                </Button>
-                                                            </div>
-                                                        ))}
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select question type" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="Short Answer">Short Answer</SelectItem>
+                                                                <SelectItem value="Multiple Choice">Multiple Choice</SelectItem>
+                                                                <SelectItem value="Long Answer">Long Answer</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
 
                                                     <div className="space-y-2">
-                                                        <label>Correct Answer</label>
+                                                        <label>Topic</label>
+                                                        <Input
+                                                            name="topic"
+                                                            placeholder="Enter topic"
+                                                            value={question.topic}
+                                                            onChange={(e) => handleQuestionChange(qIndex, 'topic', e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label>Difficulty</label>
                                                         <Select
-                                                            onValueChange={(value) => handleNestedSelectChange(value, 'questions', 'correctAnswer')}
+                                                            value={question.difficulty}
+                                                            onValueChange={(value) => handleQuestionChange(qIndex, 'difficulty', value)}
                                                         >
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder={`${String.fromCharCode(formValues.questions.correctAnswer.charCodeAt(0)-32)}. ${formValues.questions.options[formValues.questions.correctAnswer.charCodeAt(0) - 97].text}`}/>
+                                                                <SelectValue placeholder="Select difficulty" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                {formValues.questions.options.map((option, index) => (
-                                                                    <SelectItem
-                                                                        key={option.id}
-                                                                        value={String.fromCharCode(65 + index)}
-                                                                    >
-                                                                        {String.fromCharCode(65 + index)}. {option.text}
-                                                                    </SelectItem>
-                                                                ))}
+                                                                <SelectItem value="Easy">Easy</SelectItem>
+                                                                <SelectItem value="Medium">Medium</SelectItem>
+                                                                <SelectItem value="Hard">Hard</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
                                                 </div>
-                                            )}
 
-                                            {formValues.questions.type !== 'Multiple Choice' && (
-                                                <div className="space-y-2">
-                                                    <label>Correct Answer</label>
+                                                {question.type === 'Multiple Choice' && (
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <label>Answer Options (Minimum 2, Maximum 6)</label>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleAddOption(qIndex)}
+                                                                disabled={question.options.length >= 6}
+                                                            >
+                                                                <Plus className="h-4 w-4 mr-1" />
+                                                                Add Option
+                                                            </Button>
+                                                        </div>
+
+                                                        <div className="space-y-3">
+                                                            {question.options.map((option, optIndex) => (
+                                                                <div key={option.id} className="flex items-center gap-2">
+                                                                    <span className="text-sm font-medium w-6">
+                                                                        {String.fromCharCode(65 + optIndex)}.
+                                                                    </span>
+                                                                    <Input
+                                                                        placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                                                                        value={option.text}
+                                                                        onChange={(e) => handleOptionChange(qIndex, optIndex, 'text', e.target.value)}
+                                                                        className="flex-1"
+                                                                    />
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => handleRemoveOption(qIndex, optIndex)}
+                                                                        disabled={question.options.length <= 2}
+                                                                    >
+                                                                        <X className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="space-y-2">
+                                                            <label>Correct Answer</label>
+                                                            <Select
+                                                                value={question.correctAnswer}
+                                                                onValueChange={(value) => handleQuestionChange(qIndex, 'correctAnswer', value)}
+                                                            >
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select correct answer" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {question.options.map((option, optIndex) => (
+                                                                        <SelectItem
+                                                                            key={option.id}
+                                                                            value={String.fromCharCode(97 + optIndex)}
+                                                                        >
+                                                                            {String.fromCharCode(65 + optIndex)}. {option.text}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {question.type !== 'Multiple Choice' && (
+                                                    <div className="space-y-2">
+                                                        <label>Correct Answer</label>
                                                         <Textarea
                                                             placeholder="Enter the correct answer"
                                                             className="min-h-[60px]"
-                                                            value={formValues.questions.correctAnswer}
-                                                            onChange={(e) => handleNestedInputChange(e, 'questions')}
+                                                            value={question.correctAnswer}
+                                                            onChange={(e) => handleQuestionChange(qIndex, 'correctAnswer', e.target.value)}
                                                         />
-                                                </div>
-                                            )}
+                                                    </div>
+                                                )}
 
-                                            <div className="space-y-2">
-                                                <label>Explanation</label>
-                                                <Textarea
-                                                    name="explanation"
-                                                    placeholder="Explain why this is the correct answer"
-                                                    className="min-h-[80px]"
-                                                    value={formValues.questions.explanation}
-                                                    onChange={(e) => handleNestedInputChange(e, 'questions')}
-                                                />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                                <div className="space-y-2">
+                                                    <label>Explanation</label>
+                                                    <Textarea
+                                                        name="explanation"
+                                                        placeholder="Explain why this is the correct answer"
+                                                        className="min-h-[80px]"
+                                                        value={question.explanation}
+                                                        onChange={(e) => handleQuestionChange(qIndex, 'explanation', e.target.value)}
+                                                    />
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+
+                                    <Button
+                                        onClick={handleAddQuestion}
+                                        className="w-full"
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add New Question
+                                    </Button>
                                 </div>
                             </TabsContent>
 
@@ -665,69 +718,99 @@ export function ContentEditPage() {
                                                 )}
 
                                                 {/* Questions Preview Section */}
-                                                {formValues.questions.question && (
-                                                    <div className="p-4 bg-muted/20 rounded-lg border">
-                                                        <h4 className="font-medium mb-3">Question Preview:</h4>
-                                                        <div className="space-y-4">
-                                                            <div className="space-y-2">
-                                                                <h5 className="font-medium">Question:</h5>
-                                                                <p>{formValues.questions.question}</p>
+                                                <div className="space-y-4">
+                                                    <h4 className="font-medium text-lg">Questions:</h4>
+                                                    {formValues.questions.map((question, qIndex) => (
+                                                        <div key={question.id} className="space-y-6">
+                                                            {/* Question Header */}
+                                                            <div className="p-4 bg-muted/20 rounded-lg">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div>
+                                                                        <h4 className="font-medium text-lg mb-2">Question {qIndex + 1}:</h4>
+                                                                        <p className="text-lg">{question.question}</p>
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <Badge variant="outline">{question.type}</Badge>
+                                                                        <Badge variant="outline" className={
+                                                                            question.difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
+                                                                                question.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                    'bg-red-100 text-red-800'
+                                                                        }>
+                                                                            {question.difficulty}
+                                                                        </Badge>
+                                                                    </div>
+                                                                </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                <div className="space-y-1">
-                                                                    <h5 className="font-medium">Type:</h5>
-                                                                    <p>{formValues.questions.type}</p>
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <h5 className="font-medium">Topic:</h5>
-                                                                    <p>{formValues.questions.topic}</p>
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <h5 className="font-medium">Difficulty:</h5>
-                                                                    <p>{formValues.questions.difficulty}</p>
-                                                                </div>
-                                                            </div>
-
-                                                            {formValues.questions.type === 'Multiple Choice' && formValues.questions.options.length > 0 && (
-                                                                <div className="space-y-3">
-                                                                    <h5 className="font-medium">Options:</h5>
-                                                                    <ul className="space-y-2">
-                                                                        {formValues.questions.options.map((option, index) => (
-                                                                            <li key={option.id} className="flex items-start gap-2">
-                                                                                <span className="font-medium">
-                                                                                    {String.fromCharCode(65 + index)}.
-                                                                                </span>
-                                                                                <div>
+                                                            {/* Question Type Specific Display */}
+                                                            {question.type === 'Multiple Choice' && (
+                                                                <div className="p-4 bg-muted/20 rounded-lg">
+                                                                    <h4 className="font-medium mb-3">Options:</h4>
+                                                                    <div className="space-y-2">
+                                                                        {question.options?.map((option, index) => (
+                                                                            <div
+                                                                                key={index}
+                                                                                className={`py-2.5 pb-3.5 px-3 rounded-2xl border ${question.correctAnswer === String.fromCharCode(97 + index) ? 'border-green-500 bg-green-50 text-green-500' : 'border-muted'}`}
+                                                                            >
+                                                                                <div className="flex items-center">
+                                                                                    <span className="font-medium mr-2">
+                                                                                        {String.fromCharCode(65 + index)}.
+                                                                                    </span>
                                                                                     <p>{option.text}</p>
-                                                                                    {formValues.questions.correctAnswer === String.fromCharCode(65 + index)}
+                                                                                    {question.correctAnswer === String.fromCharCode(97 + index) && (
+                                                                                        <span className="ml-auto text-green-600 flex items-center">
+                                                                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                                                                            Correct Answer
+                                                                                        </span>
+                                                                                    )}
                                                                                 </div>
-                                                                            </li>
+                                                                            </div>
                                                                         ))}
-                                                                    </ul>
+                                                                    </div>
                                                                 </div>
                                                             )}
 
-                                                            <div className="space-y-2">
-                                                                <h5 className="font-medium">Correct Answer:</h5>
-                                                                {formValues.questions.type === 'Multiple Choice' ? (
-                                                                    <p>
-                                                                        {formValues.questions.correctAnswer}
-                                                                    </p>
-                                                                ) : (
-                                                                    <p>{formValues.questions.correctAnswer}</p>
-                                                                )}
+                                                            {(question.type === 'Short Answer' || question.type === 'Essay') && (
+                                                                <div className="p-4 bg-muted/20 rounded-lg">
+                                                                    <h4 className="font-medium mb-2">Answer:</h4>
+                                                                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                                                        <h4 className="font-medium text-green-800 mb-1">Expected Answer:</h4>
+                                                                        <p className="text-green-700">{question.correctAnswer}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Explanation */}
+                                                            {question.explanation && (
+                                                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                                    <h4 className="font-medium text-blue-800 mb-2">Explanation:</h4>
+                                                                    <p className="text-blue-700">{question.explanation}</p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Metadata */}
+                                                            <div className="p-4 bg-muted/20 rounded-lg">
+                                                                <h4 className="font-medium mb-3">Question Details</h4>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                    <div>
+                                                                        <p className="text-sm text-muted-foreground">Topic:</p>
+                                                                        <p className="font-medium">{question.topic}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <p className="text-sm text-muted-foreground">Status:</p>
+                                                                        <Badge variant="outline" className={
+                                                                            question.status === 'published' ? 'bg-green-100 text-green-800' :
+                                                                                question.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                    'bg-red-100 text-red-800'
+                                                                        }>
+                                                                            {question.status}
+                                                                        </Badge>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-
-                                                            {formValues.questions.explanation && (
-                                                                <div className="space-y-2">
-                                                                    <h5 className="font-medium">Explanation:</h5>
-                                                                    <p>{formValues.questions.explanation}</p>
-                                                                </div>
-                                                            )}
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    ))}
+                                                </div>
 
                                                 <div className="p-4 bg-muted/20 rounded-lg">
                                                     <h4 className="font-medium mb-2">Content Details:</h4>

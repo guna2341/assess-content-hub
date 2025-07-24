@@ -21,15 +21,19 @@ const sequelize = new Sequelize(
   }
 );
 
-// ✅ CALL BOTH FACTORY FUNCTIONS
 const defineUser = require("../models/User");
 const defineFile = require("../models/file");
+const defineContentUnit = require("../models/contentUnit");
+const defineQuestion = require("../models/question");
 
-const User = defineUser(sequelize); // ✅ initialized
-const File = defineFile(sequelize); // ✅ initialized
+const User = defineUser(sequelize); 
+const File = defineFile(sequelize); 
+const ContentUnit = defineContentUnit(sequelize); 
+const Question = defineQuestion(sequelize); 
 
-// ✅ Set up associations AFTER all models are defined
 if (User.associate) User.associate(sequelize.models);
 if (File.associate) File.associate(sequelize.models);
+if (ContentUnit.associate) ContentUnit.associate(sequelize.models);
+if (Question.associate) Question.associate(sequelize.models);
 
 module.exports = { sequelize, User, File };
