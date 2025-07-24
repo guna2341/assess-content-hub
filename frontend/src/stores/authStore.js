@@ -10,7 +10,7 @@ export const useAuthStore = create(
     
     login: async (user) => {
       try {
-        const response = await AUTH_SERVICES.LOGIN(user);
+        const response = await AUTH_SERVICES.login(user);
         const token = response?.data?.token;
         const userInfo = response?.data?.data?.user;
         secureLocalStorage.setItem("user", JSON.stringify(userInfo));
