@@ -42,7 +42,7 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
     return <Navigate to="/unauthorized" />;
   }
-    return <div className="h-screen">{children}</div>;
+    return <div>{children}</div>;
 }
 
 
@@ -78,7 +78,7 @@ const App = () => (
               </ProtectedRoute>}
             />
             <Route path="content/:id" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={["admin","reviewer"]}>
                 <ContentViewPage />
               </ProtectedRoute>} />
             <Route path="content/:id/edit" element={

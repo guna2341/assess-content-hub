@@ -33,14 +33,11 @@ import ADMIN_SERVICES from "../../api/services/admin";
             }));
         },
 
-        createContent: (data) => {
+        createContent: async (data) => {
+            const response = await ADMIN_SERVICES.createContent({ data });
             const newData = {
                 ...data,
-                id: `${Math.random()}`,
                 status: "pending",
-                createdAt: '2024-01-15',
-                updatedAt: '2024-01-20',
-                createdBy: 'Dr. Smith',
                 tags: ["react", "hooks", "javascript"],
                 totalReviews: 0,
                 minimumReviews: 3,
@@ -48,7 +45,7 @@ import ADMIN_SERVICES from "../../api/services/admin";
                 questions: {
                     ...data.questions
                 }
-            };                
+            };         
             set((state) => ({
                 content:[...state.content, newData]
             }));

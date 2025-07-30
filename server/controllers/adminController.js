@@ -24,4 +24,16 @@ const getContent = async (req, res) => {
   }
 };
 
-module.exports = { getContent };
+const addContent = async (req, res) => {
+  try {
+    const { content } = req.body;
+    console.log(content);
+    
+  }
+  catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to add content" });
+  }
+}
+
+module.exports = { getContent, addContent };

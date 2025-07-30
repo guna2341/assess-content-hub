@@ -32,9 +32,9 @@ const testConnection = async () => {
     console.log("Database connected");
 
     // Sync models (alter: true for development, remove for production)
-    await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
+    await sequelize.sync({ alter: process.env.NODE_ENV === "development",alter:true });
     console.log("Models synced");
-    const user = await User.findByPk(1);
+    const user = await User.findAll({name:"admin"});
     if (!user) {
       const password = await bcrypt.hashSync("12345", 12);
       await User.create({

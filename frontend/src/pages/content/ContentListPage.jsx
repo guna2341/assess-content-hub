@@ -124,7 +124,7 @@ export function ContentListPage() {
       </div>
 
       {/* Filters and Search */}
-      <Card className="bg-gradient-card border-0 shadow-soft">
+      <Card className="bg-gradient-card border shadow-soft">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -169,7 +169,7 @@ export function ContentListPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-gradient-card border-0 shadow-soft">
+        <Card className="bg-gradient-card border shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -179,7 +179,7 @@ export function ContentListPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-soft">
+        <Card className="bg-gradient-card border shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-success" />
@@ -189,7 +189,7 @@ export function ContentListPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-soft">
+        <Card className="bg-gradient-card border shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-warning" />
@@ -203,7 +203,7 @@ export function ContentListPage() {
       {/* Units List */}
       <div className="space-y-4">
         {filteredUnits.map((unit) => (
-          <Card key={unit.id} className="bg-gradient-card border-0 shadow-soft hover:shadow-medium transition-all duration-200">
+          <Card key={unit.id} className="bg-gradient-card border shadow-soft hover:shadow-medium transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">

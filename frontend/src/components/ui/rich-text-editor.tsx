@@ -69,6 +69,7 @@ export function RichTextEditor({
   }) => (
     <Button
       variant={isActive ? 'default' : 'ghost'}
+      type='button'
       size="sm"
       onClick={onClick}
       disabled={disabled}
@@ -93,13 +94,6 @@ export function RichTextEditor({
           isActive={editor.isActive("italic")}
         >
           <Italic className="h-4 w-4" />
-        </ToolbarButton>
-
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          isActive={editor.isActive("code")}
-        >
-          <Code className="h-4 w-4" />
         </ToolbarButton>
 
         <div className="w-px h-6 bg-border mx-1" />

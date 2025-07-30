@@ -38,7 +38,7 @@ export function AssessmentResultPage() {
           const percentage = calculatePercentage(assessment.score, assessment.totalQuestions);
           
           return (
-            <Card key={assessment.id} className="bg-gradient-card border-0 shadow-soft hover:shadow-md transition-shadow">
+            <Card key={assessment.id} className="bg-gradient-card border border-custom-100 shadow-soft hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-lg">{assessment.title}</CardTitle>

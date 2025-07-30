@@ -193,19 +193,10 @@ export default function CreateLearningUnitsPage() {
         });
         setUploadOption("file");
     };
-
-    const toggleStatus = (materialId) => {
-        setStudyMaterials(prev =>
-            prev.map(material =>
-                material.id === materialId
-                    ? { ...material, status: material.status === "published" ? "draft" : "published" }
-                    : material
-            )
-        );
-    };
-
+    
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8"
+        >
             <div className="flex flex-col space-y-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold">Manage Learning Materials</h1>
@@ -224,6 +215,7 @@ export default function CreateLearningUnitsPage() {
                             <Button
                                 onClick={() => setIsCreating(true)}
                                 className="flex items-center"
+                            
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Add Material
@@ -267,7 +259,7 @@ export default function CreateLearningUnitsPage() {
                                         <label className="block text-sm font-medium mb-2">Type *</label>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" className="w-full justify-between">
+                                                <Button variant="outline" className="w-full justify-between bg-white">
                                                     {formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}
                                                     <ChevronDown className="ml-2 h-4 w-4" />
                                                 </Button>

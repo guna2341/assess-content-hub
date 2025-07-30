@@ -8,8 +8,6 @@
   import { Textarea } from '@/components/ui/textarea';
   import { RichTextEditor } from '@/components/ui/rich-text-editor';
   import { FileUpload } from '@/components/ui/file-upload';
-  import { Badge } from '@/components/ui/badge';
-  import { Separator } from '@/components/ui/separator';
   import {
     ArrowLeft,
     Save,
@@ -135,7 +133,7 @@
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <Card className="bg-gradient-card border-0 shadow-soft">
+          <Card className="bg-gradient-card border shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5" />
@@ -201,7 +199,7 @@
           </Card>
 
           {/* Content Type Selection */}
-          <Card className="bg-gradient-card border-0 shadow-soft">
+          <Card className="bg-gradient-card border shadow-soft">
             <CardHeader>
               <CardTitle>Content Type</CardTitle>
               <CardDescription>
@@ -307,7 +305,7 @@
           </Card>
 
           {/* Question Section */}
-          <Card className="bg-gradient-card border-0 shadow-soft">
+          <Card className="bg-gradient-card border shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <HelpCircle className="h-5 w-5" />
@@ -462,7 +460,7 @@
           </Card>
 
           {/* Submit Section */}
-          <div className="flex items-center justify-between p-6 bg-gradient-card rounded-lg border-0 shadow-soft">
+          <div className="flex items-center justify-between p-6 bg-gradient-card rounded-lg border shadow-soft">
             <div>
               <p className="font-medium">Ready to create learning unit?</p>
               <p className="text-sm text-muted-foreground">

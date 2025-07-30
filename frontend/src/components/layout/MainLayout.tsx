@@ -11,11 +11,13 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col mb-2 scrollbar-none">
+    <div className="flex w-full bg-background">
+      <div>
+        <Sidebar />
+      </div>
+      <div className="flex w-full flex-col mb-2 scrollbar-none">
         <Header />
-        <main className="flex-1 p-6 scrollbar-none overflow-auto">
+        <main className="p-6 scrollbar-none overflow-auto">
           <Outlet />
         </main>
       </div>

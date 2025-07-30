@@ -258,8 +258,8 @@ export function CommentsPage() {
     };
 
     return (
-        <div className="mx-auto space-y-6 h-fit">
-            <div className="flex items-center justify-between scrollbar-none">
+        <div className="mx-auto space-y-6">
+            <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Community Discussions</h1>
                     <p className="text-muted-foreground">Ask questions and share knowledge with the community</p>

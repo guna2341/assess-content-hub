@@ -64,7 +64,7 @@ export function StudentMaterialsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search materials..."
-              className="pl-10"
+              className="pl-10 bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -74,7 +74,7 @@ export function StudentMaterialsPage() {
         <div className="flex space-x-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center">
+              <Button variant="outline" className="flex items-center bg-white">
                 {selectedCourse} <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -92,7 +92,7 @@ export function StudentMaterialsPage() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center">
+              <Button variant="outline" className="flex items-center bg-white">
                 {selectedType} <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
