@@ -20,7 +20,6 @@ import {
     ChevronRight,
     FolderPlus,
     Folder,
-    FolderOpen,
     User,
     MessageSquare
 } from 'lucide-react';
@@ -494,7 +493,7 @@ export default function QuestionCreator() {
                     <Button
                         variant="outline"
                         onClick={() => setPreviewMode(!previewMode)}
-                        className="w-full sm:w-auto"
+                        className="w-full sm:w-auto bg-gray-100"
                     >
                         <Eye className="h-4 w-4 mr-2" />
                         {previewMode ? 'Edit Mode' : 'Preview Mode'}

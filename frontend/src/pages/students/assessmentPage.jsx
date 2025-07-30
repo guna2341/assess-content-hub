@@ -34,7 +34,6 @@ export function AssessmentDetailPage() {
     submitAssessment,
     goToNextQuestion,
     goToPrevQuestion,
-    resetAssessment
   } = useAssessmentDetailStore();
 
   // Check if assessment was already completed

@@ -74,7 +74,7 @@ export function ReviewerDashboard() {
         {stats.map((stat) => {
           const IconComponent = iconComponents[stat.icon];
           return (
-            <Card key={stat.title} className="bg-gradient-card border-0 shadow-soft">
+            <Card key={stat.title} className="bg-gradient-card border shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                 <div className={`${stat.bgColor} p-2 rounded-lg`}>
@@ -91,7 +91,7 @@ export function ReviewerDashboard() {
       </div>
 
       {/* Pending Questions */}
-      <Card className="bg-gradient-card border-0 shadow-soft">
+      <Card className="bg-gradient-card border shadow-soft">
         <CardHeader>
           <CardTitle>Questions Awaiting Review</CardTitle>
           <CardDescription>
@@ -130,7 +130,7 @@ export function ReviewerDashboard() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/questions/${question.id}`)}>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/content/${question.id}`)}>
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </Button>
@@ -141,14 +141,6 @@ export function ReviewerDashboard() {
                   >
                     <ThumbsUp className="h-4 w-4 mr-1" />
                     Approve
-                  </Button>
-                  <Button 
-                    variant="warning" 
-                    size="sm"
-                    onClick={() => handleEdit(question.id)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
                   </Button>
                   <Button 
                     variant="destructive" 

@@ -83,7 +83,7 @@ export function AdminDashboard() {
           const color = getColor(stat.title);
           const bgColor = getBg(stat.title);
          return  (
-            <Card key={stat.title} className="bg-gradient-card border-0 shadow-soft">
+            <Card key={stat.title} className="bg-gradient-card border shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                 <div className={`${bgColor} p-2 rounded-lg`}>
@@ -101,7 +101,7 @@ export function AdminDashboard() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Quick Actions */}
-        <Card className="bg-gradient-card border-0 shadow-soft">
+        <Card className="bg-gradient-card border shadow-soft">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Common administrative tasks</CardDescription>
@@ -164,14 +164,14 @@ export function AdminDashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="bg-gradient-card border-0 shadow-soft">
+        <Card className="bg-gradient-card border shadow-soft">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>Latest platform activities</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3">
+              <div key={activity.id} className="flex items-start gap-3 p-2">
                 <div className="bg-primary/10 p-1.5 rounded-full mt-1">
                   <TrendingUp className="h-3 w-3 text-primary" />
                 </div>
@@ -185,7 +185,7 @@ export function AdminDashboard() {
                 </div>
               </div>
             ))}
-            <Button variant="ghost" className="w-full mt-4">
+            <Button variant="ghost" className="w-full mt-4 border bg-gray-100">
               <Eye className="h-4 w-4 mr-2" />
               View All Activities
             </Button>

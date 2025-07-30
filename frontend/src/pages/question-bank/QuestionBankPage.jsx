@@ -374,7 +374,7 @@ export function QuestionBankPage() {
 
                       {/* Explanation */}
                       {question.explanation && (
-                        <div className="bg-muted/30 rounded-lg p-4">
+                        <div className="bg-muted/30 border rounded-lg p-4">
                           <h4 className="font-medium text-sm mb-2">Explanation:</h4>
                           <p className="text-sm">{question.explanation}</p>
                         </div>
@@ -396,7 +396,7 @@ export function QuestionBankPage() {
 
                         {/* Existing Comments */}
                         {question.comments?.map((comment) => (
-                          <div key={comment.id} className="bg-muted/20 rounded-lg p-3">
+                          <div key={comment.id} className="bg-muted/20 rounded-lg p-3 border">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-medium text-sm">{comment.user}</span>
                               <div className="flex items-center gap-2">

@@ -16,7 +16,6 @@ import secureLocalStorage from 'react-secure-storage';
 
 export function Header() {
   const { user, logout } = useAuthStore();
-  secureLocalStorage.clear();
   const nav = useNavigate();
 
   function handleNavigate() {
@@ -45,13 +44,13 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 px-6 flex items-center justify-between">
+    <header className="sticky top-0 z-10 h-16 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 px-6 flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1">
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search content, questions..."
-            className="pl-9 bg-background/50"
+            className="pl-9 bg-gray-500/5 border border-custom-100"
           />
         </div>
       </div>

@@ -27,7 +27,6 @@ export function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const response = await login({ email, password });
-    console.log("login:",response);
     
     if (response?.status) {
       toast({

@@ -37,9 +37,7 @@ export function StudentDashboard() {
     stats,
     upcomingAssessments,
     recentResults,
-    updatePreparation,
-    addNewResult,
-    updateStats,
+    updatePreparation
   } = useStudentDashboardStore();
 
   return (
@@ -51,7 +49,7 @@ export function StudentDashboard() {
             Track your assessment progress and upcoming evaluations
           </p>
         </div>
-        <Button onClick={() => navigate('/assessments')} variant="hero">
+        <Button onClick={() => navigate('/assessments')}>
           <FileText className="h-4 w-4 mr-2" />
           View All Assessments
         </Button>
@@ -62,7 +60,7 @@ export function StudentDashboard() {
         {stats.map((stat) => {
           const IconComponent = iconComponents[stat.icon];
           return (
-            <Card key={stat.title} className="bg-gradient-card border-0 shadow-soft">
+            <Card key={stat.title} className="bg-gradient-card border border-custom-100 shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                 <IconComponent className={`h-4 w-4 ${stat.color}`} />
@@ -88,7 +86,7 @@ export function StudentDashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Upcoming Assessments */}
-        <Card className="lg:col-span-2 bg-gradient-card border-0 shadow-soft">
+        <Card className="lg:col-span-2 bg-gradient-card border shadow-soft border-custom-100">
           <CardHeader>
             <CardTitle>Upcoming Assessments</CardTitle>
             <CardDescription>Prepare for your next evaluations</CardDescription>
@@ -144,7 +142,7 @@ export function StudentDashboard() {
         </Card>
 
         {/* Recent Results */}
-        <Card className="bg-gradient-card border-0 shadow-soft">
+        <Card className="bg-gradient-card border border-custom-100 shadow-soft">
           <CardHeader>
             <CardTitle>Recent Results</CardTitle>
             <CardDescription>Your latest assessment performance</CardDescription>
@@ -177,14 +175,6 @@ export function StudentDashboard() {
                 </div>
               </div>
             ))}
-            <Button 
-              variant="ghost" 
-              className="w-full mt-4"
-              onClick={() => navigate('/analytics')}
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              View Detailed Analytics
-            </Button>
           </CardContent>
         </Card>
       </div>
