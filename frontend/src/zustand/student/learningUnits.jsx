@@ -1,4 +1,3 @@
-// stores/student-materials.store.js
 import { create } from 'zustand';
 
 export const useStudentMaterialsStore = create((set, get) => ({
@@ -30,6 +29,46 @@ export const useStudentMaterialsStore = create((set, get) => ({
       type: 'lecture',
       course: 'Advanced React',
       uploadDate: '2023-10-20',
+      downloadUrl: '#',
+    },
+    {
+      id: '4',
+      title: 'Linear Algebra Fundamentals',
+      type: 'lecture',
+      course: 'Mathematics',
+      uploadDate: '2023-10-10',
+      downloadUrl: '#',
+    },
+    {
+      id: '5',
+      title: 'Problem Set 1',
+      type: 'assignment',
+      course: 'Mathematics',
+      uploadDate: '2023-10-12',
+      downloadUrl: '#',
+    },
+    {
+      id: '6',
+      title: 'Shakespearean Literature',
+      type: 'lecture',
+      course: 'English Literature',
+      uploadDate: '2023-10-05',
+      downloadUrl: '#',
+    },
+    {
+      id: '7',
+      title: 'Essay on Macbeth',
+      type: 'assignment',
+      course: 'English Literature',
+      uploadDate: '2023-10-08',
+      downloadUrl: '#',
+    },
+    {
+      id: '8',
+      title: 'Cell Biology Basics',
+      type: 'lecture',
+      course: 'Biology',
+      uploadDate: '2023-10-22',
       downloadUrl: '#',
     },
   ],

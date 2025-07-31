@@ -1,4 +1,3 @@
-// stores/student-dashboard.store.js
 import { create } from 'zustand';
 
 export const useStudentDashboardStore = create((set) => ({
@@ -20,13 +19,6 @@ export const useStudentDashboardStore = create((set) => ({
       color: 'text-accent',
     },
     {
-      title: 'Time Spent',
-      value: '14h',
-      description: 'On assessments this month',
-      icon: 'Clock',
-      color: 'text-primary',
-    },
-    {
       title: 'Highest Score',
       value: '94%',
       description: 'Algebra Midterm',
@@ -41,6 +33,7 @@ export const useStudentDashboardStore = create((set) => ({
       id: 1,
       title: 'Mathematics Midterm',
       type: 'Exam',
+      course: 'Mathematics',
       dueDate: '2023-11-15',
       duration: '90 min',
       status: 'Not Started',
@@ -50,6 +43,7 @@ export const useStudentDashboardStore = create((set) => ({
       id: 2,
       title: 'English Essay',
       type: 'Assignment',
+      course: 'English Literature',
       dueDate: '2023-11-20',
       duration: 'Take-home',
       status: 'In Progress',
@@ -59,6 +53,7 @@ export const useStudentDashboardStore = create((set) => ({
       id: 3,
       title: 'Science Quiz',
       type: 'Quiz',
+      course: 'Biology',
       dueDate: '2023-11-10',
       duration: '30 min',
       status: 'Not Started',
@@ -68,9 +63,24 @@ export const useStudentDashboardStore = create((set) => ({
 
   // Recent results
   recentResults: [
-    { assessment: 'Algebra Quiz', score: 88, date: '3 days ago', type: 'Quiz' },
-    { assessment: 'Literature Analysis', score: 76, date: '1 week ago', type: 'Assignment' },
-    { assessment: 'Chemistry Test', score: 82, date: '2 weeks ago', type: 'Test' },
+    { 
+      assessment: 'Algebra Quiz', 
+      score: 88, 
+      date: '3 days ago', 
+      type: 'Quiz' 
+    },
+    { 
+      assessment: 'Literature Analysis', 
+      score: 76, 
+      date: '1 week ago', 
+      type: 'Assignment' 
+    },
+    { 
+      assessment: 'Chemistry Test', 
+      score: 82, 
+      date: '2 weeks ago', 
+      type: 'Test' 
+    },
   ],
 
   // Actions
