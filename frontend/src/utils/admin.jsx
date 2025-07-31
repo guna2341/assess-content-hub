@@ -152,26 +152,7 @@ export const contentUnits = [
             question: 'What is a variable in algebra?',
             type: 'Multiple Choice',
             options: [
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2933",
-                    isCorrect:true,
-                    text:"option a"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2934",
-                    isCorrect: false,
-                    text: "option b"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2935",
-                    isCorrect: false,
-                    text: "option c"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2936",
-                    isCorrect: false,
-                    text: "option d"
-                },
+              "2","3","4","5"
 
             ],
             topic: 'variables',

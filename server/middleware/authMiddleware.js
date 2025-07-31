@@ -17,13 +17,12 @@ const protect = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded);
-    
-    const user = await User.findByPk(decoded.id, {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);    
+    let user = await User.findByPk(decoded.id, {
       attributes: { exclude: ['password'] }
     });
-
+    user = user.dataValues;
+    
     if (!user) {
       return res.status(401).json({
         message: 'User belonging to this token no longer exists'
