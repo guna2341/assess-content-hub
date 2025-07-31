@@ -1,78 +1,76 @@
-// env
-require("dotenv").config();
+require('dotenv').config();
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+const morgan = require('morgan');
+const bcrypt = require('bcryptjs');
+const path = require('path');
 
-// packages
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-const morgan = require("morgan");
-const bcrypt = require("bcryptjs");
-const path = require("path");
+// Database connection
+const { sequelize, User } = require('./config/db');
 
-// Models
-const { sequelize, User } = require("./config/db");
-
-// Port
 const PORT = process.env.PORT || 5000;
 
 // Error handlers
-const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 // Routes
-const authRoutes = require("./routes/authRoutes");
-const adminRoutes = require("./routes/adminRoutes");
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const questionBankRoutes = require('./routes/questionBank');
 
-// Initialize Express
 const app = express();
 
-// DB connection
-const testConnection = async () => {
+// Test DB connection and sync models
+const initializeDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log("Database connected");
+    console.log('Database connected');
 
-    // Sync models (alter: true for development, remove for production)
-    await sequelize.sync({ alter: process.env.NODE_ENV === "development",alter:true });
-    console.log("Models synced");
-    const user = await User.findAll({name:"admin"});
-    if (!user) {
-      const password = await bcrypt.hashSync("12345", 12);
+    // Sync models
+    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+    console.log('Models synced');
+
+    // Create admin user if not exists
+    const admin = await User.findOne({ where: { email: 'admin@gmail.com' } });
+    if (!admin) {
+      const password = await bcrypt.hash('12345', 12);
       await User.create({
-        email: "admin@gmail.com",
-        password: password,
-        name: "admin",
-        role: "admin",
+        email: 'admin@gmail.com',
+        password,
+        name: 'admin',
+        role: 'admin'
       });
-      console.log("Admin user created");
+      console.log('Admin user created');
     }
   } catch (error) {
-    console.error("Database connection error:", error);
+    console.error('Database initialization error:', error);
   }
 };
-testConnection();
+
+initializeDB();
 
 // Middleware
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Logging requests
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
+// Logging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 
 // Routes
-app.use("/auth", authRoutes);
-app.use("/admin", adminRoutes);
-app.use("/users", async (req, res) => {
-  const users = await User.findAll();
-  return res.json({ users: users });
-});
-app.use(express.static(path.join(__dirname, "public")));
+app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes);
+app.use('/question-bank', questionBankRoutes);
 
-// Error handling middleware
+// Static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Error handling
 app.use(notFound);
 app.use(errorHandler);
 

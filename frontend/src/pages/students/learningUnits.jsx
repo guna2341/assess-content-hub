@@ -1,4 +1,3 @@
-// StudentMaterialsPage.jsx
 import {
   Card,
   CardContent,
@@ -21,10 +20,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Search, FileText, BookOpen } from "lucide-react";
+import { ChevronDown, Search, FileText, BookOpen, ArrowLeft } from "lucide-react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useStudentMaterialsStore } from "../../zustand/student/learningUnits";
+import { useEffect } from 'react';
 
 export function StudentMaterialsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navigationState = location.state || {};
+  
   const {
     searchTerm,
     selectedCourse,
@@ -37,6 +42,16 @@ export function StudentMaterialsPage() {
     getFilteredMaterials,
   } = useStudentMaterialsStore();
 
+  // Initialize with values from navigation state if available
+  useEffect(() => {
+    if (navigationState.course) {
+      setSelectedCourse(navigationState.course);
+    }
+    if (navigationState.type) {
+      setSelectedType(navigationState.type);
+    }
+  }, [navigationState, setSelectedCourse, setSelectedType]);
+
   const filteredMaterials = getFilteredMaterials();
 
   const handleMaterialClick = (materialId, downloadUrl) => {
@@ -46,20 +61,29 @@ export function StudentMaterialsPage() {
       addDownloadedMaterial(materialId);
     }
     
-    // Trigger download (in real app, replace with actual download logic)
+    // Trigger download
     console.log(`Downloading material ${materialId}`);
     window.location.href = downloadUrl;
   };
 
-  // Get unique courses for dropdown
   const courses = ["All Courses", ...new Set(filteredMaterials.map(m => m.course))];
   const types = ["All Types", "Lecture", "Assignment"];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4">
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Study Materials</h1>
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate(-1)}
+              className="rounded-full"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold">Study Materials</h1>
+          </div>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -112,6 +136,11 @@ export function StudentMaterialsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Available Materials</CardTitle>
+            {selectedCourse !== "All Courses" && (
+              <p className="text-sm text-muted-foreground -mt-4">
+                Filtered by: {selectedCourse} {selectedType !== "All Types" ? `• ${selectedType}` : ''}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <Table>
