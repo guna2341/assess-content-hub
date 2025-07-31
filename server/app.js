@@ -24,6 +24,7 @@ const app = express();
 // Test DB connection and sync models
 const initializeDB = async () => {
   try {
+    
     await sequelize.authenticate();
     console.log('Database connected');
 
