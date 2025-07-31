@@ -14,6 +14,17 @@ import {
     Plus,
     CheckCircle
 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -34,9 +45,10 @@ export function ContentEditPage() {
     });
 
     const contentUnits = useAdminContentStore(state => state.content);
-    const unit = contentUnits.find(u => u.id === id);
+    const unit = contentUnits.find(u => `${u?.id}` === `${id}`);
+    const [editLoading, setEditLoading] = useState(false);    
     const editContent = useAdminContentStore(state => state.editContent);
-
+    const deleteContent = useAdminContentStore(state => state.deleteContent);
     const [formValues, setFormValues] = useState({
         id: '',
         title: '',
@@ -51,7 +63,6 @@ export function ContentEditPage() {
         contentType: 'html',
         questions: []
     });
-
     useEffect(() => {
         if (unit) {
             setFormValues({
@@ -66,18 +77,20 @@ export function ContentEditPage() {
                 language: unit.language || 'en',
                 contentType: unit.contentType || 'html',
                 questions: unit.questions?.length > 0 ? unit.questions.map(q => ({
-                    id: q.id || crypto.randomUUID(),
+                    id: q.id ,
                     question: q.question || '',
-                    type: q.type || 'Short Answer',
+                    type: q.type ? q.type.toLowerCase() === 'multiple choice' ? 'Multiple Choice' : q.type : 'Short Answer',
                     topic: q.topic || '',
-                    difficulty: q.difficulty || 'Easy',
+                    difficulty: q.difficulty ? q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1) : 'Easy',
                     correctAnswer: q.correctAnswer || '',
                     explanation: q.explanation || '',
-                    options: q.options?.length > 0 ? q.options.map(opt => ({
-                        id: opt.id || crypto.randomUUID(),
-                        text: opt.text || '',
-                        isCorrect: opt.isCorrect || false
-                    })) : []
+                    options: Array.isArray(q.options)
+                        ? q.options.map((opt, index) => ({
+                            id: crypto.randomUUID(),
+                            text: typeof opt === 'string' ? opt : opt.text || '',
+                            isCorrect: q.correctAnswer === String.fromCharCode(65 + index)
+                        }))
+                        : []
                 })) : [{
                     id: crypto.randomUUID(),
                     question: '',
@@ -233,7 +246,6 @@ export function ContentEditPage() {
             questions: [
                 ...prev.questions,
                 {
-                    id: crypto.randomUUID(),
                     question: '',
                     type: 'Short Answer',
                     topic: '',
@@ -269,8 +281,26 @@ export function ContentEditPage() {
         }));
     };
 
-    const onSubmit = () => {
-        editContent(formValues);
+    const handleDelete = async (id) => {
+        try {            
+            await deleteContent(unit.id, id);
+            toast({
+                title: "Question deleted successfully",
+                variant: "success",
+            });
+        } catch (err) {
+            console.error("Delete failed:", err);
+            toast({
+                title: "Some error occurred",
+                variant: "error",
+            });
+        }
+    };
+
+    const onSubmit = async () => {
+        setEditLoading(true);
+        await editContent(unit.id,formValues);
+        setEditLoading(false);
         toast({
             title: "Content updated successfully",
             description: `"${formValues.title}" has been saved.`,
@@ -306,9 +336,11 @@ export function ContentEditPage() {
                         <X className="h-4 w-4 mr-2" />
                         Discard Changes
                     </Button>
-                    <Button onClick={onSubmit}>
+                    <Button onClick={onSubmit}
+                        disabled={editLoading}
+                    >
                         <Save className="h-4 w-4 mr-2" />
-                        Save Changes
+                        {editLoading ? "Saving" : " Save Changes"}
                     </Button>
                 </div>
             </div>
@@ -333,7 +365,7 @@ export function ContentEditPage() {
                                     <Input
                                         name="title"
                                         placeholder="Learning unit title"
-                                        className="text-2xl font-semibold border-none shadow-none focus-visible:ring-0"
+                                        className="text-2xl font-semibold border border-custom-100 shadow-none focus-visible:ring-0"
                                         value={formValues.title}
                                         onChange={handleInputChange}
                                     />
@@ -344,7 +376,7 @@ export function ContentEditPage() {
                                         <Textarea
                                             name="description"
                                             placeholder="Brief description of the content"
-                                            className="border-none w-full shadow-none focus-visible:ring-0 resize-none text-muted-foreground"
+                                            className="border border-custom-10 w-full shadow-none focus-visible:ring-0 resize-none text-muted-foreground"
                                             value={formValues.description}
                                             onChange={handleInputChange}
                                         />
@@ -385,7 +417,7 @@ export function ContentEditPage() {
                                                     <img
                                                         src={formValues.imageLink}
                                                         alt="Content image"
-                                                        className="max-w-full max-h-[400px] object-contain"
+                                                        className="max-w-full max-h-[400px] object-contain rounded-md"
                                                         onLoad={() => setLoading(prev => ({ ...prev, image: false }))}
                                                         onError={() => setLoading(prev => ({ ...prev, image: false }))}
                                                     />
@@ -396,7 +428,7 @@ export function ContentEditPage() {
                                                     type="file"
                                                     accept="image/*"
                                                     onChange={handleImageUpload}
-                                                    className="flex-1"
+                                                    className="flex-1 cursor-pointer"
                                                 />
                                                 {formValues.imageLink && (
                                                     <Button
@@ -438,7 +470,7 @@ export function ContentEditPage() {
                                                     type="file"
                                                     accept="video/*"
                                                     onChange={handleVideoUpload}
-                                                    className="flex-1"
+                                                    className="flex-1 cursor-pointer"
                                                 />
                                                 {formValues.videoLink && (
                                                     <Button
@@ -477,7 +509,7 @@ export function ContentEditPage() {
                                     </div>
                                 </div>
                             </TabsContent>
-
+                                                
                             <TabsContent value="questions">
                                 <div className="mt-4 space-y-6">
                                     {formValues.questions.map((question, qIndex) => (
@@ -487,15 +519,35 @@ export function ContentEditPage() {
                                                     <HelpCircle className="h-5 w-5" />
                                                     Question {qIndex + 1}
                                                 </CardTitle>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleRemoveQuestion(qIndex)}
-                                                    disabled={formValues.questions.length <= 1}
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-1" />
-                                                    Remove
-                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 mr-1" />
+                                                            Remove
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Are you sure you want to delete this question? This action cannot be undone.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                className="bg-red-600 text-white hover:bg-red-500"
+                                                                onClick={() => handleDelete(question.id)}
+                                                            >
+                                                                Delete
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+
                                             </CardHeader>
                                             <CardContent className="space-y-4">
                                                 <div className="space-y-2">
@@ -513,6 +565,8 @@ export function ContentEditPage() {
                                                     <div className="space-y-2">
                                                         <label>Type</label>
                                                         <Select
+                                                            // placeholder={question.type}
+                                                            label={question.type}
                                                             value={question.type}
                                                             onValueChange={(value) => {
                                                                 handleQuestionChange(qIndex, 'type', value);
@@ -522,12 +576,14 @@ export function ContentEditPage() {
                                                             }}
                                                         >
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Select question type" />
+                                                                <SelectValue placeholder="Select question type"
+                                                                value={question.type}
+                                                                />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="Short Answer">Short Answer</SelectItem>
+                                                                <SelectItem value="short answer">Short Answer</SelectItem>
                                                                 <SelectItem value="Multiple Choice">Multiple Choice</SelectItem>
-                                                                <SelectItem value="Long Answer">Long Answer</SelectItem>
+                                                                <SelectItem value="long answer">Long Answer</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
@@ -608,13 +664,17 @@ export function ContentEditPage() {
                                                                 onValueChange={(value) => handleQuestionChange(qIndex, 'correctAnswer', value)}
                                                             >
                                                                 <SelectTrigger>
-                                                                    <SelectValue placeholder="Select correct answer" />
+                                                                    <SelectValue placeholder="Select correct answer">
+                                                                        {question.correctAnswer
+                                                                            ? `${question.correctAnswer}. ${question.options[question.correctAnswer.charCodeAt(0) - 65]?.text || ''}`
+                                                                            : "Select correct answer"}
+                                                                    </SelectValue>
                                                                 </SelectTrigger>
                                                                 <SelectContent>
                                                                     {question.options.map((option, optIndex) => (
                                                                         <SelectItem
                                                                             key={option.id}
-                                                                            value={String.fromCharCode(97 + optIndex)}
+                                                                            value={String.fromCharCode(65 + optIndex)}
                                                                         >
                                                                             {String.fromCharCode(65 + optIndex)}. {option.text}
                                                                         </SelectItem>
@@ -720,7 +780,19 @@ export function ContentEditPage() {
                                                 {/* Questions Preview Section */}
                                                 <div className="space-y-4">
                                                     <h4 className="font-medium text-lg">Questions:</h4>
-                                                    {formValues.questions.map((question, qIndex) => (
+                                                    {unit.questions.length === 0 && (
+                                                        <div className="flex flex-col items-center justify-center p-6 border rounded-lg bg-muted/20">
+                                                            <div className="bg-red-100 text-red-600 p-3 rounded-full mb-3">
+                                                                <Trash2 className="h-6 w-6" />
+                                                            </div>
+                                                            <h3 className="text-lg font-semibold">No Questions Available</h3>
+                                                            <p className="text-sm text-muted-foreground text-center mt-1">
+                                                                This content has no questions yet. Add a question to get started.
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {unit.questions.length > 0 && formValues.questions.map((question, qIndex) => (
                                                         <div key={question.id} className="space-y-6">
                                                             {/* Question Header */}
                                                             <div className="p-4 bg-muted/20 rounded-lg">

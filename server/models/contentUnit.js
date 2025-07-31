@@ -25,8 +25,8 @@ module.exports = (sequelize) => {
       content: DataTypes.TEXT,
       language: DataTypes.STRING,
       explanation: DataTypes.TEXT,
-      createdBy: DataTypes.STRING,
       imageLink: DataTypes.STRING,
+      videoLink: DataTypes.STRING,
       pending: {
         type: DataTypes.INTEGER,
         defaultValue: 0,

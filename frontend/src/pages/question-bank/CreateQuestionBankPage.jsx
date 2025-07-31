@@ -503,7 +503,7 @@ export default function QuestionCreator() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="lg:col-span-1">
-                    <Card className="h-full">
+                    <Card className="h-auto">
                         <CardHeader>
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <BookOpen className="h-5 w-5" />
@@ -521,7 +521,7 @@ export default function QuestionCreator() {
                                 Add Root Topic
                             </Button>
 
-                            <div className="space-y-1 overflow-y-auto overflow-x-auto max-h-[calc(100vh-300px)] scrollbar-none">
+                            <div className="space-y-1 pl-1 overflow-x-auto scrollbar-none">
                                 {renderTopicTree(questionBank)}
                             </div>
                         </CardContent>
