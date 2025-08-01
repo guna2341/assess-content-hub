@@ -316,9 +316,9 @@ export const CommentsPage = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] bg-background">
+        <div className="flex h-[calc(100vh-7rem)] bg-background">
             {/* Faculty List Sidebar */}
-            <div className={`${selectedFaculty ? 'hidden lg:block lg:w-80' : 'w-full'} border-r bg-card/50 backdrop-blur-sm`}>
+            <div className={`${selectedFaculty ? 'hidden lg:block lg:w-70' : 'w-full'} border-r bg-card/50 backdrop-blur-sm`}>
                 <div className="p-6 border-b bg-card/80 backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-foreground">Faculty</h2>

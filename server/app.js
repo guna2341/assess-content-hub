@@ -21,6 +21,7 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const reviewerRoutes = require("./routes/reviewerRoutes");
 
 // Initialize Express
 const app = express();
@@ -68,6 +69,7 @@ if (process.env.NODE_ENV === "development") {
 // Routes
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
+app.use("/reviewer", reviewerRoutes);
 app.use("/users", async (req, res) => {
   const users = await User.findAll();
   return res.json({ users: users });
@@ -78,7 +80,53 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+const http = require("http");
+const { Server } = require("socket.io");
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: { origin: "*", credentials: true },
+});
+
+io.on("connection", (socket) => {
+  console.log("🔌 New client connected:", socket.id);
+
+  socket.on("joinQuestionRoom", (questionId) => {
+    socket.join(`question_${questionId}`);
+    console.log(`User joined question room: question_${questionId}`);
+  });
+
+  socket.on("sendComment", async ({ questionId, senderId, text }) => {
+    // Save comment in DB (we’ll create Comment model below)
+    const comment = await sequelize.models.Comment.create({
+      questionId,
+      senderId,
+      text,
+    });
+    io.to(`question_${questionId}`).emit("newComment", comment);
+  });
+
+  socket.on(
+    "sendMessage",
+    async ({ questionId, senderId, receiverId, message }) => {
+      // Save message in DB (we’ll create ChatMessage model below)
+      const chatMessage = await sequelize.models.ChatMessage.create({
+        questionId,
+        senderId,
+        receiverId,
+        message,
+      });
+      io.to(`question_${questionId}`).emit("newMessage", chatMessage);
+    }
+  );
+
+  socket.on("disconnect", () => {
+    console.log("❌ Client disconnected:", socket.id);
+  });
+});
+
+server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
 

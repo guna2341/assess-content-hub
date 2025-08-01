@@ -16,6 +16,9 @@ const END_POINTS = {
     },
     editContent: (id) => `admin/content/${id}`,
   },
+  FACULTY: {
+    content: "reviewer/content"
+  }
 };
 
 export default END_POINTS;

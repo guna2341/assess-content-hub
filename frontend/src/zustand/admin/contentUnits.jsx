@@ -1,17 +1,26 @@
     import { create } from "zustand";
     import { contentUnits } from "../../utils/admin";
-import ADMIN_SERVICES from "../../api/services/admin";
-    
+    import ADMIN_SERVICES from "../../api/services/admin";
+    import { useAuthStore } from "../../stores/authStore";
+import FACULTY_SERVICES from "../../api/services/faculty";
+
     export const useAdminContentStore = create((set, get) => ({
         content: [],
 
         getContent: async () => {
             const { content } = get();
+            const { user } = useAuthStore.getState();
             try {
                 if (content.length > 0) {
                     return { message: "Data fetched successfully", state: true };
                 }
-                const response = await ADMIN_SERVICES.getContent();
+                let response;
+                if (user.role == "admin") {
+                    response = await ADMIN_SERVICES.getContent();
+                }
+                else {
+                    response = await FACULTY_SERVICES.getContent();
+                }
                 set({ content: response?.data?.data });
                 return { message: "Data fetched successfully", state: true };
             }

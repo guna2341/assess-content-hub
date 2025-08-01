@@ -29,8 +29,9 @@ export function Sidebar() {
 
   const reviewerNavItems = [
     { to: "/dashboard", icon: BarChart3, label: "Dashboard" },
-    { to: "/reviews", icon: CheckSquare, label: "Reviews" },
     { to: "/content", icon: BookOpen, label: "Content Units" },
+    { to: '/content/create', icon: PlusCircle, label: 'Create Unit' },
+    { to: '/questions/create', icon: FileText, label: 'Modify Questions' },
     { to: "/question-bank", icon: Library, label: "Question Bank" },
     { to: "/comments", icon: MessageSquare, label: "Comments" },
   ];
