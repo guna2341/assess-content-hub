@@ -207,7 +207,7 @@ export default function CreateLearningUnitsPage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search materials..."
-                                    className="pl-10"
+                                    className="pl-10 bg-white"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -344,7 +344,7 @@ export default function CreateLearningUnitsPage() {
 
                 <div className="flex space-x-4">
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild className="bg-white">
                             <Button variant="outline" className="flex items-center">
                                 {selectedCourse} <ChevronDown className="ml-2 h-4 w-4" />
                             </Button>
@@ -362,7 +362,7 @@ export default function CreateLearningUnitsPage() {
                     </DropdownMenu>
 
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild className="bg-white">
                             <Button variant="outline" className="flex items-center">
                                 {selectedType} <ChevronDown className="ml-2 h-4 w-4" />
                             </Button>
@@ -380,12 +380,12 @@ export default function CreateLearningUnitsPage() {
                     </DropdownMenu>
                 </div>
 
-                <div className="bg-white rounded-lg shadow">
-                    <div className="overflow-x-auto">
-                        <table className="w-full rounded-lg overflow-hidden">
+                <div className="bg-white rounded-lg">
+                    <div className="overflow-x-auto rounded-lg border">
+                        <table className="w-full rounded-lg">
                             <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                <tr className="border-b">
+                                    <th className="px-6 py-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
