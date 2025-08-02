@@ -24,35 +24,78 @@ import {
   BookOpen,
   Clock,
   CheckCircle,
-  AlertCircle,
   XCircle,
-  Pencil
+  Pencil,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminContentStore } from '../../zustand/admin/contentUnits';
 import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/hooks/use-toast';
 
 export function ContentListPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [languageFilter, setLanguageFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [error, setError] = useState(null);
   const contentUnits = useAdminContentStore(state => state.content);
   const deleteContent = useAdminContentStore(state => state.deleteContent);
   const { user } = useAuthStore();
   const { getContent } = useAdminContentStore();
-  const [page, setPage] = useState(0);
-  
-  useEffect(() => { 
-    async function content() {
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getContent();
+
+        if (!response.state) {
+          setError(response.message || 'Failed to load content units');
+          toast({
+            title: 'Error!',
+            description: response.message,
+            variant: "destructive"
+          });
+        }
+      } catch (err) {
+        setError(err.message || 'An unexpected error occurred');
+        toast({
+          title: 'Error!',
+          description: 'Failed to load content units',
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     };
-    content();
+
+    fetchContent();
   }, []);
 
-  const handleDeleteUnit = (action, id) => {
+  const handleDeleteUnit = async (action, id) => {
     if (action === "delete") {
-      deleteContent(id);
+      try {
+        setLoading(true);
+        await deleteContent(id);
+        toast({
+          title: 'Success',
+          description: 'Content unit deleted successfully',
+          variant: "default"
+        });
+      } catch (err) {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete content unit',
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -107,6 +150,34 @@ export function ContentListPage() {
   const totalUnits = contentUnits.length;
   const publishedUnits = contentUnits.filter(u => u.status === 'published').length;
   const pendingUnits = contentUnits.filter(u => u.status === 'pending').length;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-lg font-medium">Loading content units...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <div className="bg-red-100 p-4 rounded-full">
+          <AlertTriangle className="h-12 w-12 text-red-600" />
+        </div>
+        <h3 className="text-xl font-semibold">Failed to load content</h3>
+        <p className="text-muted-foreground max-w-md text-center">{error}</p>
+        <Button
+          onClick={() => window.location.reload()}
+          variant="outline"
+          className="mt-4"
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -233,42 +304,45 @@ export function ContentListPage() {
                   </div>
                 </div>
 
-                {user.role === "admin" ? (
+                {user.role === "admin" || user.role == "reviewer" ? (
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}`)}>
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}/edit`)}>
+                    {user.role == "admin" &&
+      <>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/content/${unit.id}/edit`)}>
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
                     </Button>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Unit</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this content unit?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteUnit('delete', unit.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4 mr-1" />
                             Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Unit</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this content unit?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteUnit('delete', unit.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                    }
                   </div>
                 ) : (
                   <div>
@@ -284,7 +358,7 @@ export function ContentListPage() {
         ))}
       </div>
 
-      {filteredUnits.length === 0 && (
+      {filteredUnits.length === 0 && !loading && (
         <Card className="bg-gradient-card border-0 shadow-soft">
           <CardContent className="p-12 text-center">
             <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

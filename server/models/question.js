@@ -21,18 +21,29 @@ module.exports = (sequelize) => {
         allowNull: false,
         primaryKey: true,
       },
-      questionText: {
+      question: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      answer: {
+      correctAnswer: {
         type: DataTypes.TEXT,
         allowNull: false,
+      },
+      createdBy: {
+        type: DataTypes.STRING,
       },
       status: {
         type: DataTypes.ENUM("published", "approved", "rejected", "pending"),
         defaultValue: "pending", // Add default value
         allowNull: false, // Make it required
+      },
+      minimumReviews: {
+        type: DataTypes.INTEGER,
+        defaultValue:3
+      },
+      totalReviews: {
+        type: DataTypes.INTEGER,
+        defaultValue:0
       },
       contentUnitId: {
         type: DataTypes.INTEGER,

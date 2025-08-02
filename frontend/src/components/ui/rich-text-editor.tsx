@@ -1,8 +1,8 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { createLowlight } from 'lowlight';
-import { Button } from '@/components/ui/button';
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { createLowlight } from "lowlight";
+import { Button } from "@/components/ui/button";
 import {
   Bold,
   Italic,
@@ -12,21 +12,25 @@ import {
   Code,
   Undo,
   Redo,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
   content?: string;
   onChange?: (content: string) => void;
   placeholder?: string;
   className?: string;
+  editorClassName?: string;
+  height?: string; // New prop for controlling height
 }
 
 export function RichTextEditor({
-  content = '',
+  content = "",
   onChange,
-  placeholder = 'Start typing...',
+  placeholder = "Start typing...",
   className,
+  editorClassName,
+  height = "400px", // Default height
 }: RichTextEditorProps) {
   const lowlight = createLowlight();
 
@@ -40,10 +44,7 @@ export function RichTextEditor({
     content,
     editorProps: {
       attributes: {
-        class: cn(
-          'mx-auto focus:outline-none min-h-[200px] p-2 m-0',
-          className
-        ),
+        class: cn("focus:outline-none p-2 m-0 overflow-y-auto", className),
       },
     },
     onUpdate: ({ editor }) => {
@@ -68,8 +69,8 @@ export function RichTextEditor({
     disabled?: boolean;
   }) => (
     <Button
-      variant={isActive ? 'default' : 'ghost'}
-      type='button'
+      variant={isActive ? "default" : "ghost"}
+      type="button"
       size="sm"
       onClick={onClick}
       disabled={disabled}
@@ -80,8 +81,15 @@ export function RichTextEditor({
   );
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-background">
-      <div className="border-b p-2 flex gap-1 flex-wrap">
+    <div
+      className={cn(
+        "border rounded-lg overflow-hidden bg-background flex flex-col",
+        editorClassName
+      )}
+      style={{ height }}
+    >
+      {/* Fixed Toolbar */}
+      <div className="border-b p-2 flex gap-1 flex-wrap bg-background sticky top-0 z-10">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive("bold")}
@@ -136,9 +144,10 @@ export function RichTextEditor({
         </ToolbarButton>
       </div>
 
-      <EditorContent
-        editor={editor}
-        className="p-2"    />
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <EditorContent editor={editor} className="h-full" />
+      </div>
     </div>
   );
 }

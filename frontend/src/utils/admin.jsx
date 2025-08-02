@@ -1,247 +1,228 @@
 
-export const contentUnits = [
-    {
-        id: '1',
-        code: 'MATH-101',
-        title: 'Introduction to Algebra',
-        description: 'Basic algebraic concepts and operations',
-        content: `<h2>Chapter 1: Basic Concepts</h2>
-      <p>Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols.</p>
-      <h3>1.1 Variables and Constants</h3>
-      <ul>
-        <li><strong>Variable:</strong> A symbol (usually a letter) that represents a number that may change.</li>
-        <li><strong>Constant:</strong> A fixed value that does not change.</li>
-      </ul>
-      <h3>1.2 Expressions and Equations</h3>
-      <ul>
-        <li><strong>Expression:</strong> A combination of variables, numbers and operations.</li>
-        <li><strong>Equation:</strong> A statement that two expressions are equal.</li>
-      </ul>`,
-        questionType: "content",
-        language: 'en',
-        explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-20',
-        totalReviews: 3,
-        minimumReviews: 3,
-        questions:
-        [
+    export const contentUnits = [
         {
-            id: 'q1',
-            question: 'What is a variable in algebra?',
-            type: 'Short Answer',
-                topic: 'variables',
-                status: 'published',
-            difficulty: 'Easy',
-            correctAnswer: 'A symbol that represents a number that can change.',
-                explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
-                createdBy: 'Dr. Smith',
-                },
-                {
-                    id: 'q1',
-                    question: 'What is a variable in algebra?',
-                    type: 'Short Answer',
+            id: '1',
+            code: 'MATH-101',
+            title: 'Introduction to Algebra',
+            description: 'Basic algebraic concepts and operations',
+            content: `<h2>Chapter 1: Basic Concepts</h2>
+        <p>Algebra is a branch of mathematics dealing with symbols and the rules for manipulating those symbols.</p>
+        <h3>1.1 Variables and Constants</h3>
+        <ul>
+            <li><strong>Variable:</strong> A symbol (usually a letter) that represents a number that may change.</li>
+            <li><strong>Constant:</strong> A fixed value that does not change.</li>
+        </ul>
+        <h3>1.2 Expressions and Equations</h3>
+        <ul>
+            <li><strong>Expression:</strong> A combination of variables, numbers and operations.</li>
+            <li><strong>Equation:</strong> A statement that two expressions are equal.</li>
+        </ul>`,
+            questionType: "content",
+            language: 'en',
+            explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
+            createdAt: '2024-01-15',
+            updatedAt: '2024-01-20',
+            totalReviews: 3,
+            minimumReviews: 3,
+            questions:
+            [
+            {
+                id: 'q1',
+                question: 'What is a variable in algebra?',
+                type: 'Short Answer',
                     topic: 'variables',
                     status: 'published',
-                    difficulty: 'Easy',
-                    correctAnswer: 'A symbol that represents a number that can change.',
+                difficulty: 'Easy',
+                correctAnswer: 'A symbol that represents a number that can change.',
                     explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
                     createdBy: 'Dr. Smith',
-                }
-        ]
-    },
-    {
-        id: '2',
-        code: 'MATH-201',
-        title: 'அலகு: சமமான கோணங்கள்',
-        description: 'இந்த அலகில் கோணங்களின் அடிப்படைப் புரிதலைக் கற்றுக்கொள்கிறோம்.',
-        content: `
-      <h2>அத்தியாயம் 1: கோணங்கள்</h2>
-      <p>கோணம் என்பது இரண்டு ரேகைகள் சந்திக்கும் இடத்தில் உருவாகும்.</p>
-      <h3>1.1 கோண வகைகள்</h3>
-      <ul>
-        <li>குறுகிய கோணம்</li>
-        <li>நீளமான கோணம்</li>
-      </ul>
-    `,
-        language: 'ta',
-        explanation: 'This unit teaches the basics of angles and their types in Tamil.',
-        questionsCount: 8,
-        studentsEnrolled: 38,
-        createdAt: '2024-02-01',
-        updatedAt: '2024-02-04',
-        createdBy: 'Dr. Kumar',
-        questionType: "content",
-        totalRevies: 3,
-        minimumReviews: 3,
-        questions:[
+                    },
+                    {
+                        id: 'q1',
+                        question: 'What is a variable in algebra?',
+                        type: 'Short Answer',
+                        topic: 'variables',
+                        status: 'published',
+                        difficulty: 'Easy',
+                        correctAnswer: 'A symbol that represents a number that can change.',
+                        explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+                        createdBy: 'Dr. Smith',
+                    }
+            ]
+        },
         {
-            id: 'q3',
-            question: 'கோணம் என்றால் என்ன?',
-            type: 'Long Answer',
-                topic: 'angles',
-                status: 'published',
-            difficulty: 'Easy',
-            correctAnswer: 'இரண்டு ரேகைகள் சந்திக்கும் இடத்தில் உருவாகும் வடிவம்.',
-            explanation: 'An angle is formed at the intersection of two lines.',
+            id: '2',
+            code: 'MATH-201',
+            title: 'அலகு: சமமான கோணங்கள்',
+            description: 'இந்த அலகில் கோணங்களின் அடிப்படைப் புரிதலைக் கற்றுக்கொள்கிறோம்.',
+            content: `
+        <h2>அத்தியாயம் 1: கோணங்கள்</h2>
+        <p>கோணம் என்பது இரண்டு ரேகைகள் சந்திக்கும் இடத்தில் உருவாகும்.</p>
+        <h3>1.1 கோண வகைகள்</h3>
+        <ul>
+            <li>குறுகிய கோணம்</li>
+            <li>நீளமான கோணம்</li>
+        </ul>
+        `,
+            language: 'ta',
+            explanation: 'This unit teaches the basics of angles and their types in Tamil.',
+            questionsCount: 8,
+            studentsEnrolled: 38,
+            createdAt: '2024-02-01',
+            updatedAt: '2024-02-04',
             createdBy: 'Dr. Kumar',
-            createdAt: '2024-02-01'
-            }
-        ]
-    },
-    {
-        id: '3',
-        code: 'MATH-301',
-        title: 'त्रिकोणमिति का परिचय',
-        description: 'त्रिकोणों और उनके अनुपातों की मूल बातें।',
-        content: `
-      <h2>अध्याय 1: त्रिकोणमिति</h2>
-      <p>त्रिकोणमिति गणित की वह शाखा है जिसमें कोणों और त्रिकोणों का अध्ययन किया जाता है।</p>
-      <h3>1.1 प्रमुख अनुपात</h3>
-      <ul>
-        <li>साइन (sin)</li>
-        <li>कोसाइन (cos)</li>
-        <li>टैन्जेंट (tan)</li>
-      </ul>
-    `,
-        language: 'hi',
-        explanation: 'This unit introduces trigonometry and its basic ratios in Hindi.',
-        questionsCount: 10,
-        studentsEnrolled: 41,
-        createdAt: '2024-03-01',
-        updatedAt: '2024-03-04',
-        createdBy: 'Dr. Mehta',
-        questionType: "content",
-        totalRevies: 2,
-        minimumReviews: 3,
-        questions:[
+            questionType: "content",
+            totalRevies: 3,
+            minimumReviews: 3,
+            questions:[
+            {
+                id: 'q3',
+                question: 'கோணம் என்றால் என்ன?',
+                type: 'Long Answer',
+                    topic: 'angles',
+                    status: 'published',
+                difficulty: 'Easy',
+                correctAnswer: 'இரண்டு ரேகைகள் சந்திக்கும் இடத்தில் உருவாகும் வடிவம்.',
+                explanation: 'An angle is formed at the intersection of two lines.',
+                createdBy: 'Dr. Kumar',
+                createdAt: '2024-02-01'
+                }
+            ]
+        },
         {
-            id: 'q4',
-            question: 'त्रिकोणमिति में साइन क्या दर्शाता है?',
-            type: 'Short Answer',
-                topic: 'trigonometry',
-                status: 'published',
-            difficulty: 'Medium',
-            correctAnswer: 'विपरीत भुजा और कर्ण का अनुपात',
-            explanation: 'In trigonometry, sine is the ratio of the opposite side to the hypotenuse.',
+            id: '3',
+            code: 'MATH-301',
+            title: 'त्रिकोणमिति का परिचय',
+            description: 'त्रिकोणों और उनके अनुपातों की मूल बातें।',
+            content: `
+        <h2>अध्याय 1: त्रिकोणमिति</h2>
+        <p>त्रिकोणमिति गणित की वह शाखा है जिसमें कोणों और त्रिकोणों का अध्ययन किया जाता है।</p>
+        <h3>1.1 प्रमुख अनुपात</h3>
+        <ul>
+            <li>साइन (sin)</li>
+            <li>कोसाइन (cos)</li>
+            <li>टैन्जेंट (tan)</li>
+        </ul>
+        `,
+            language: 'hi',
+            explanation: 'This unit introduces trigonometry and its basic ratios in Hindi.',
+            questionsCount: 10,
+            studentsEnrolled: 41,
+            createdAt: '2024-03-01',
+            updatedAt: '2024-03-04',
             createdBy: 'Dr. Mehta',
-            createdAt: '2024-03-01'
-            }
-        ]
-    },
-    {
-        id: '4',
-        code: 'MATH-101',
-        title: 'Introduction to Algebra',
-        description: 'Basic algebraic concepts and operations',
-        content: "<p>Demo Image</p>",
-        imageLink: "https://tse2.mm.bing.net/th/id/OIP.7cRYFyLoDEDh4sRtM73vvwHaDg?pid=Api&P=0&h=180",
-        language: 'en',
-        explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
-        questionsCount: 12,
-        studentsEnrolled: 45,
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-20',
-        createdBy: 'Dr. Smith',
-        questionType: "content",
-        totalReviews: 3,
-        minimumReviews: 3,
-        questions:[
+            questionType: "content",
+            totalRevies: 2,
+            minimumReviews: 3,
+            questions:[
+            {
+                id: 'q4',
+                question: 'त्रिकोणमिति में साइन क्या दर्शाता है?',
+                type: 'Short Answer',
+                    topic: 'trigonometry',
+                    status: 'published',
+                difficulty: 'Medium',
+                correctAnswer: 'विपरीत भुजा और कर्ण का अनुपात',
+                explanation: 'In trigonometry, sine is the ratio of the opposite side to the hypotenuse.',
+                createdBy: 'Dr. Mehta',
+                createdAt: '2024-03-01'
+                }
+            ]
+        },
         {
-            id: 'q1',
-            question: 'What is a variable in algebra?',
-            type: 'Multiple Choice',
-            options: [
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2933",
-                    isCorrect:true,
-                    text:"option a"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2934",
-                    isCorrect: false,
-                    text: "option b"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2935",
-                    isCorrect: false,
-                    text: "option c"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2936",
-                    isCorrect: false,
-                    text: "option d"
-                },
-
-            ],
-            topic: 'variables',
-            difficulty: 'Easy',
-            correctAnswer: 'a',
-            explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+            id: '4',
+            code: 'MATH-101',
+            title: 'Introduction to Algebra',
+            description: 'Basic algebraic concepts and operations',
+            content: "<p>Demo Image</p>",
+            imageLink: "https://tse2.mm.bing.net/th/id/OIP.7cRYFyLoDEDh4sRtM73vvwHaDg?pid=Api&P=0&h=180",
+            language: 'en',
+            explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
+            questionsCount: 12,
+            studentsEnrolled: 45,
+            createdAt: '2024-01-15',
+            updatedAt: '2024-01-20',
             createdBy: 'Dr. Smith',
-                createdAt: '2024-01-15'
-            
-            },
-        ]
-    },
-    {
-        id: '5',
-        code: 'MATH-401',
-        title: 'Introduction to Algebra',
-        description: 'Basic algebraic concepts and operations',
-        content: "<p>Demo Image</p>",
-        imageLink: "https://tse2.mm.bing.net/th/id/OIP.7cRYFyLoDEDh4sRtM73vvwHaDg?pid=Api&P=0&h=180",
-        language: 'en',
-        explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
-        status: 'needs edit',
-        questionsCount: 12,
-        studentsEnrolled: 45,
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-20',
-        createdBy: 'Dr. Smith',
-        questionType: "content",
-        totalReviews: 3,
-        minimumReviews: 3,
-        questions:[
-        {
-            id: 'q1',
-            question: 'What is a variable in algebra?',
-
-                status: 'published',
+            questionType: "content",
+            totalReviews: 3,
+            minimumReviews: 3,
+            questions:[
+            {
+                id: 'q1',
+                question: 'What is a variable in algebra?',
                 type: 'Multiple Choice',
-            options: [
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2933",
-                    isCorrect: true,
-                    text: "option a"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2934",
-                    isCorrect: false,
-                    text: "option b"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2935",
-                    isCorrect: false,
-                    text: "option c"
-                },
-                {
-                    id: "a0018813-3476-4440-a27c-a4d5ed8b2936",
-                    isCorrect: false,
-                    text: "option d"
-                },
+                options: [
+                "2","3","4","5"
 
-            ],
-            topic: 'variables',
-            difficulty: 'Easy',
-            correctAnswer: 'a',
-            explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+                ],
+                topic: 'variables',
+                difficulty: 'Easy',
+                correctAnswer: 'a',
+                explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+                createdBy: 'Dr. Smith',
+                    createdAt: '2024-01-15'
+                
+                },
+            ]
+        },
+        {
+            id: '5',
+            code: 'MATH-401',
+            title: 'Introduction to Algebra',
+            description: 'Basic algebraic concepts and operations',
+            content: "<p>Demo Image</p>",
+            imageLink: "https://tse2.mm.bing.net/th/id/OIP.7cRYFyLoDEDh4sRtM73vvwHaDg?pid=Api&P=0&h=180",
+            language: 'en',
+            explanation: 'This unit introduces algebraic concepts like variables, constants, expressions, and equations.',
+            status: 'needs edit',
+            questionsCount: 12,
+            studentsEnrolled: 45,
+            createdAt: '2024-01-15',
+            updatedAt: '2024-01-20',
             createdBy: 'Dr. Smith',
-            createdAt: '2024-01-15'
-            },
-        ]
-    }
-];
+            questionType: "content",
+            totalReviews: 3,
+            minimumReviews: 3,
+            questions:[
+            {
+                id: 'q1',
+                question: 'What is a variable in algebra?',
+
+                    status: 'published',
+                    type: 'Multiple Choice',
+                options: [
+                    {
+                        id: "a0018813-3476-4440-a27c-a4d5ed8b2933",
+                        isCorrect: true,
+                        text: "option a"
+                    },
+                    {
+                        id: "a0018813-3476-4440-a27c-a4d5ed8b2934",
+                        isCorrect: false,
+                        text: "option b"
+                    },
+                    {
+                        id: "a0018813-3476-4440-a27c-a4d5ed8b2935",
+                        isCorrect: false,
+                        text: "option c"
+                    },
+                    {
+                        id: "a0018813-3476-4440-a27c-a4d5ed8b2936",
+                        isCorrect: false,
+                        text: "option d"
+                    },
+
+                ],
+                topic: 'variables',
+                difficulty: 'Easy',
+                correctAnswer: 'a',
+                explanation: 'A variable is a placeholder for a value that can change, commonly represented by letters.',
+                createdBy: 'Dr. Smith',
+                createdAt: '2024-01-15'
+                },
+            ]
+        }
+    ];
 
     export const questionBank = [
         {

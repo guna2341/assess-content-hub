@@ -1,562 +1,531 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { useState, useEffect, useRef } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
     Send,
-    Edit,
-    Trash2,
-    User,
-    Shield,
-    MessageSquare,
-    Plus,
-    ChevronDown,
-    ChevronRight,
-    Clock
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+    ArrowLeft,
+    Mail,
+    Users,
+    Search,
+    Loader2
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import CHAT_SERVICES from '../api/services/chat';
+import USER_SERVICES from '../api/services/user';
+import secureLocalStorage from 'react-secure-storage';
+import { useAuthStore } from '@/stores/authStore';
+import io from 'socket.io-client';
 
-export function CommentsPage() {
+export const CommentsPage = () => {
     const { toast } = useToast();
-    const [posts, setPosts] = useState([
-        {
-            id: '1',
-            title: 'What is the chemical formula for water?',
-            content: 'I need help understanding basic chemistry concepts. Can someone explain the molecular structure of water and why it\'s essential for life?',
-            author: {
-                id: 'user1',
-                name: 'Student123',
-                role: 'user',
-                avatar: '/avatars/user1.jpg'
-            },
-            createdAt: '2024-01-20T14:30:00Z',
-            comments: [
-                {
-                    id: 'c1',
-                    content: 'The formula is H₂O - two hydrogen atoms and one oxygen atom. This simple structure gives water its unique properties like high surface tension and ability to dissolve many substances.',
-                    author: {
-                        id: 'user2',
-                        name: 'ChemistryTutor',
-                        role: 'expert',
-                        avatar: '/avatars/user2.jpg'
-                    },
-                    createdAt: '2024-01-20T15:15:00Z',
-                    replies: [
-                        {
-                            id: 'r1',
-                            content: 'Also worth mentioning about heavy water (D₂O) which is used in nuclear reactors. It has deuterium instead of regular hydrogen.',
-                            author: {
-                                id: 'user3',
-                                name: 'ScienceProf',
-                                role: 'admin',
-                                avatar: '/avatars/user3.jpg'
-                            },
-                            createdAt: '2024-01-20T16:30:00Z'
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            id: '2',
-            title: 'Best resources for learning React?',
-            content: 'Looking for recommendations for React tutorials and courses. I\'m particularly interested in hooks and context API.',
-            author: {
-                id: 'user4',
-                name: 'CodeNewbie',
-                role: 'user',
-                avatar: '/avatars/user4.jpg'
-            },
-            createdAt: '2024-01-18T09:20:00Z',
-            comments: []
-        }
-    ]);
+    const [conversations, setConversations] = useState([]);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSending, setIsSending] = useState(false);
+    const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+    const [isNearBottom, setIsNearBottom] = useState(true);
+    const { user } = useAuthStore();
 
-    const [newPost, setNewPost] = useState({
-        title: '',
-        content: ''
-    });
-
-    const [newComment, setNewComment] = useState('');
-    const [replyingTo, setReplyingTo] = useState(null);
-    const [editingComment, setEditingComment] = useState(null);
-    const [showPostForm, setShowPostForm] = useState(false);
+    // Socket.IO reference
+    const socketRef = useRef(null);
+    const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
 
     const currentUser = {
-        id: 'current-user',
-        name: 'You',
-        role: 'user',
-        avatar: '/avatars/current-user.jpg'
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role
     };
 
-    const handleCreatePost = () => {
-        if (!newPost.title.trim() || !newPost.content.trim()) {
-            toast({
-                title: 'Missing information',
-                description: 'Please provide both a title and content for your post',
-                variant: 'destructive'
-            });
-            return;
+    // Check if user is near bottom of chat
+    const checkIfNearBottom = () => {
+        if (messagesContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+            const threshold = 100; // pixels from bottom
+            const nearBottom = scrollHeight - scrollTop - clientHeight < threshold;
+            setIsNearBottom(nearBottom);
+            return nearBottom;
         }
-
-        const post = {
-            id: Date.now().toString(),
-            title: newPost.title,
-            content: newPost.content,
-            author: currentUser,
-            createdAt: new Date().toISOString(),
-            comments: []
-        };
-
-        setPosts([post, ...posts]);
-        setNewPost({ title: '', content: '' });
-        setShowPostForm(false);
-
-        toast({
-            title: 'Post created',
-            description: 'Your discussion post has been published'
-        });
+        return true;
     };
 
-    const handleAddComment = (postId) => {
-        if (!newComment.trim()) {
-            toast({
-                title: 'Empty comment',
-                description: 'Please write something before posting',
-                variant: 'destructive'
-            });
-            return;
+    // Scroll to bottom function
+    const scrollToBottom = (behavior = 'smooth') => {
+        messagesEndRef.current?.scrollIntoView({ behavior });
+    };
+
+    // Handle scroll events
+    const handleScroll = () => {
+        checkIfNearBottom();
+    };
+
+    // Auto scroll logic - only scroll if user is near bottom or it's a new conversation
+    useEffect(() => {
+        if (shouldAutoScroll || isNearBottom) {
+            scrollToBottom('smooth');
         }
-
-        const comment = {
-            id: `comment-${Date.now()}`,
-            content: newComment,
-            author: currentUser,
-            createdAt: new Date().toISOString(),
-            replies: []
-        };
-
-        setPosts(posts.map(post =>
-            post.id === postId
-                ? { ...post, comments: [...post.comments, comment] }
-                : post
-        ));
-        setNewComment('');
-        setReplyingTo(null);
-
-        toast({
-            title: 'Comment added',
-            description: 'Your response has been posted'
-        });
-    };
-
-    const handleAddReply = (postId, commentId) => {
-        if (!newComment.trim()) {
-            toast({
-                title: 'Empty reply',
-                description: 'Please write something before posting',
-                variant: 'destructive'
-            });
-            return;
+        // Reset shouldAutoScroll after first scroll
+        if (shouldAutoScroll) {
+            setShouldAutoScroll(false);
         }
+    }, [messages]);
 
-        const reply = {
-            id: `reply-${Date.now()}`,
-            content: newComment,
-            author: currentUser,
-            createdAt: new Date().toISOString()
-        };
+    // Initialize Socket.IO connection
+    useEffect(() => {
+        // Connect to socket server
+        socketRef.current = io('http://localhost:5000');
 
-        setPosts(posts.map(post => {
-            if (post.id === postId) {
-                return {
-                    ...post,
-                    comments: post.comments.map(comment => {
-                        if (comment.id === commentId) {
-                            return {
-                                ...comment,
-                                replies: [...comment.replies, reply]
-                            };
-                        }
-                        return comment;
-                    })
-                };
-            }
-            return post;
-        }));
+        // Register user with socket server
+        socketRef.current.emit('registerUser', currentUser.id);
 
-        setNewComment('');
-        setReplyingTo(null);
+        // Listen for new messages
+        socketRef.current.on('newMessage', (message) => {
+            // Only update if the message is for current conversation
+            if (selectedConversation &&
+                (message.sender_id === selectedConversation.id ||
+                    message.receiver_id === selectedConversation.id)) {
 
-        toast({
-            title: 'Reply added',
-            description: 'Your reply has been posted'
-        });
-    };
+                // Check if message already exists to prevent duplicates
+                setMessages(prev => {
+                    const existingMessage = prev.find(m => m.id === message.id);
+                    if (existingMessage) {
+                        return prev; // Don't add if already exists
+                    }
+                    return [...prev, message];
+                });
 
-    const handleDeleteComment = (postId, commentId, isReply = false, parentCommentId = null) => {
-        setPosts(posts.map(post => {
-            if (post.id === postId) {
-                if (isReply) {
-                    return {
-                        ...post,
-                        comments: post.comments.map(comment => {
-                            if (comment.id === parentCommentId) {
-                                return {
-                                    ...comment,
-                                    replies: comment.replies.filter(reply => reply.id !== commentId)
-                                };
-                            }
-                            return comment;
-                        })
-                    };
-                } else {
-                    return {
-                        ...post,
-                        comments: post.comments.filter(comment => comment.id !== commentId)
-                    };
+                // If the message is from the current user to the selected conversation,
+                // mark it as read immediately
+                if (message.sender_id === selectedConversation.id &&
+                    message.receiver_id === currentUser.id) {
+                    // Mark as read via socket
+                    socketRef.current.emit('markMessagesAsRead', {
+                        senderId: message.sender_id,
+                        receiverId: currentUser.id
+                    });
                 }
             }
-            return post;
-        }));
 
-        toast({
-            title: 'Comment deleted',
-            description: 'The comment has been removed'
+            // Update last message in conversations list
+            setConversations(prev => prev.map(conv => {
+                if (conv.id === message.sender_id || conv.id === message.receiver_id) {
+                    const isCurrentConversation = selectedConversation &&
+                        (conv.id === selectedConversation.id);
+
+                    return {
+                        ...conv,
+                        lastMessage: message.message,
+                        lastMessageTime: message.created_at,
+                        // Don't increment unread count if this is the current conversation
+                        // and the user is not the sender
+                        unreadCount: isCurrentConversation && message.sender_id !== currentUser.id
+                            ? conv.unreadCount || 0
+                            : message.sender_id === currentUser.id
+                                ? conv.unreadCount || 0
+                                : (conv.unreadCount || 0) + 1
+                    };
+                }
+                return conv;
+            }));
         });
-    };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        // Listen for unread count updates
+        socketRef.current.on('unreadCountUpdate', ({ senderId, count }) => {
+            setConversations(prev => prev.map(conv =>
+                conv.id === senderId
+                    ? { ...conv, unreadCount: count }
+                    : conv
+            ));
         });
-    };
 
-    const getRoleBadge = (role) => {
-        switch (role) {
-            case 'admin':
-                return (
-                    <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                        <Shield className="h-3 w-3" />
-                        Admin
-                    </Badge>
+        // Listen for messages marked as read
+        socketRef.current.on('messagesMarkedAsRead', ({ receiverId }) => {
+            // Update conversation to show messages as read
+            setConversations(prev => prev.map(conv =>
+                conv.id === receiverId
+                    ? { ...conv, unreadCount: 0 }
+                    : conv
+            ));
+        });
+
+        // Cleanup on unmount
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+        };
+    }, [currentUser.id, selectedConversation]);
+
+    // Load initial data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setIsLoading(true);
+
+                // Get appropriate chat partners based on role
+                const response = await USER_SERVICES.getChatPartners(currentUser.role, currentUser.id);
+
+                // Handle the response based on your original controller format
+                if (response.data) {
+                    // If your controller returns { data: [...] }
+                    setConversations(Array.isArray(response.data) ? response.data : []);
+                } else if (Array.isArray(response)) {
+                    // If your controller returns the array directly
+                    setConversations(response);
+                } else {
+                    console.error('Unexpected response format:', response);
+                    setConversations([]);
+                }
+
+                // Load unread counts
+                const unreadResponse = await CHAT_SERVICES.getUnreadCount(currentUser.id);
+
+                // Handle unread response (your original controller returns array directly)
+                if (unreadResponse.data && Array.isArray(unreadResponse.data)) {
+                    updateUnreadCounts(unreadResponse.data);
+                } else if (Array.isArray(unreadResponse)) {
+                    updateUnreadCounts(unreadResponse);
+                }
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                toast({
+                    title: 'Error loading conversations',
+                    description: error.response?.data?.message || 'Could not fetch your chat list',
+                    variant: 'destructive'
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (currentUser.id) {
+            loadData();
+        }
+    }, [currentUser.id]);
+
+    // Load messages when conversation is selected
+    useEffect(() => {
+        if (selectedConversation) {
+            // Set auto-scroll to true for new conversation
+            setShouldAutoScroll(true);
+            setIsNearBottom(true);
+
+            loadMessages(selectedConversation.id);
+            markMessagesAsRead(selectedConversation.id);
+
+            // Join the chat room for this conversation
+            if (socketRef.current) {
+                socketRef.current.emit('joinChatRoom', {
+                    userId1: currentUser.id,
+                    userId2: selectedConversation.id
+                });
+            }
+        }
+    }, [selectedConversation]);
+
+    const loadMessages = async (userId) => {
+        try {
+            const response = await CHAT_SERVICES.getChatHistory(
+                currentUser.id,
+                userId
+            );
+
+            // Your original controller returns messages directly, not wrapped in { success, data }
+            if (response.data && Array.isArray(response.data)) {
+                // Remove duplicates based on message id
+                const uniqueMessages = response.data.filter((message, index, self) =>
+                    index === self.findIndex(m => m.id === message.id)
                 );
-            case 'expert':
-                return <Badge variant="secondary" className="text-xs">Expert</Badge>;
-            default:
-                return null;
+
+                setMessages(uniqueMessages);
+            } else {
+                console.error('Failed to load messages:', response);
+                toast({
+                    title: 'Error loading messages',
+                    description: 'Could not fetch chat history',
+                    variant: 'destructive'
+                });
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            toast({
+                title: 'Error loading messages',
+                description: error.response?.data?.message || 'Could not fetch chat history',
+                variant: 'destructive'
+            });
         }
     };
 
+    const markMessagesAsRead = async (userId) => {
+        console.log("Marking messages as read from:", userId, "to:", currentUser.id);
+
+        try {
+            // Mark as read via API
+            await CHAT_SERVICES.markMessagesAsRead(
+                userId,
+                currentUser.id
+            );
+
+            // Also mark as read via socket for real-time updates
+            if (socketRef.current) {
+                socketRef.current.emit('markMessagesAsRead', {
+                    senderId: userId,
+                    receiverId: currentUser.id
+                });
+            }
+
+            // Update local state
+            setConversations(prev => prev.map(conv =>
+                conv.id === userId
+                    ? { ...conv, unreadCount: 0 }
+                    : conv
+            ));
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!newMessage.trim()) {
+            toast({
+                title: 'Empty message',
+                description: 'Please write something before sending',
+                variant: 'destructive'
+            });
+            return;
+        }
+
+        try {
+            setIsSending(true);
+
+            // Force scroll to bottom when user sends a message
+            setIsNearBottom(true);
+
+            // ONLY send via Socket.IO - let the server handle database saving
+            if (socketRef.current) {
+                socketRef.current.emit('sendMessage', {
+                    senderId: currentUser.id,
+                    receiverId: selectedConversation.id,
+                    message: newMessage
+                });
+            }
+
+            // Clear the input immediately
+            setNewMessage('');
+
+        } catch (error) {
+            toast({
+                title: 'Error sending message',
+                description: 'Could not send your message',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const updateUnreadCounts = (unreadData) => {
+        setConversations(prev => prev.map(conv => {
+            const unread = unreadData.find(item => item.sender_id === conv.id);
+            return {
+                ...conv,
+                unreadCount: unread ? unread.count : 0
+            };
+        }));
+    };
+
+    const formatTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const filteredConversations = conversations.filter(conv =>
+        conv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conv.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
-        <div className="mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Community Discussions</h1>
-                    <p className="text-muted-foreground">Ask questions and share knowledge with the community</p>
+        <div className="flex h-[calc(100vh-7rem)] bg-background">
+            {/* Conversations List */}
+            <div className={`${selectedConversation ? 'hidden lg:block lg:w-80' : 'w-full'} border-r bg-card/50`}>
+                <div className="p-4 border-b">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Messages</h2>     
+                    </div>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search contacts..."
+                            className="pl-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
-                <Button onClick={() => setShowPostForm(!showPostForm)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Post
-                </Button>
+
+                <div className="overflow-y-auto h-[calc(100%-120px)]">
+                    {isLoading ? (
+                        <div className="flex justify-center p-8">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : filteredConversations.length > 0 ? (
+                        <div className="divide-y">
+                            {filteredConversations.map((conv) => (
+                                <div
+                                    key={conv.id}
+                                    className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${selectedConversation?.id === conv.id ? 'bg-muted/30' : ''
+                                        }`}
+                                    onClick={() => setSelectedConversation(conv)}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <Avatar className="h-10 w-10">
+                                                <AvatarImage src={conv.avatar} />
+                                                <AvatarFallback>
+                                                    {conv.name.split(' ').map(n => n[0]).join('')}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            {conv.is_online && (
+                                                <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between">
+                                                <p className="font-medium truncate">{conv.name}</p>
+                                                {conv.unreadCount > 0 && (
+                                                    <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center">
+                                                        {conv.unreadCount}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-muted-foreground truncate">
+                                                {conv.department || 'Faculty'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="p-8 text-center">
+                            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <p className="text-muted-foreground">
+                                {searchTerm ? 'No matching contacts found' : 'No conversations yet'}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* New Post Form */}
-            {showPostForm && (
-                <Card className="border-none shadow-sm">
-                    <CardContent className="p-6 space-y-4">
-                        <h2 className="font-semibold text-lg">Create a New Post</h2>
-                        <Input
-                            placeholder="Post title"
-                            value={newPost.title}
-                            onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                            className="text-base"
-                        />
-                        <RichTextEditor
-                            content={newPost.content}
-                            onChange={(content) => setNewPost({ ...newPost, content })}
-                            placeholder="Write your post content here..."
-                            className="min-h-[150px]"
-                        />
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button variant="outline" onClick={() => setShowPostForm(false)}>
-                                Cancel
-                            </Button>
-                            <Button onClick={handleCreatePost}>
-                                Post Discussion
+            {/* Chat Area */}
+            {selectedConversation && (
+                <div className="flex-1 flex flex-col">
+                    {/* Chat Header */}
+                    <div className="p-4 border-b flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="lg:hidden"
+                            onClick={() => setSelectedConversation(null)}
+                        >
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={selectedConversation.avatar} />
+                            <AvatarFallback>
+                                {selectedConversation.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h3 className="font-semibold">{selectedConversation.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                                {selectedConversation.is_online ? 'Online' : 'Offline'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div
+                        ref={messagesContainerRef}
+                        className="flex-1 overflow-y-auto p-4 space-y-4"
+                        onScroll={handleScroll}
+                    >
+                        {messages.length > 0 ? (
+                            <>
+                                {messages.map((msg) => (
+                                    <div
+                                        key={msg.id}
+                                        className={`flex ${msg.sender_id === currentUser.id ? 'justify-end' : 'justify-start'
+                                            }`}
+                                    >
+                                        <div
+                                            className={`max-w-[75%] rounded-lg p-3 ${msg.sender_id === currentUser.id
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted'
+                                                }`}
+                                        >
+                                            <p className="text-sm">{msg.message}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                                <Mail className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
+                                <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+                                <p className="text-muted-foreground max-w-md">
+                                    Start a conversation with {selectedConversation.name}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Message Input */}
+                    <div className="p-4 border-t">
+                        <div className="flex gap-2">
+                            <Textarea
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Type a message..."
+                                className="min-h-[60px] resize-none"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSendMessage();
+                                    }
+                                }}
+                            />
+                            <Button
+                                onClick={handleSendMessage}
+                                disabled={!newMessage.trim() || isSending}
+                                size="sm"
+                                className="h-auto"
+                            >
+                                {isSending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Send className="h-4 w-4" />
+                                )}
                             </Button>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Posts List */}
-            <div className="space-y-6">
-                {posts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
-                        <MessageSquare className="h-12 w-12 text-muted-foreground" />
-                        <h3 className="text-lg font-medium">No discussions yet</h3>
-                        <p className="text-muted-foreground">Be the first to start a discussion</p>
-                        <Button onClick={() => setShowPostForm(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Post
-                        </Button>
                     </div>
-                ) : (
-                    posts.map(post => (
-                        <Card key={post.id} className="overflow-hidden shadow-sm">
-                            <CardHeader className="px-6 py-4 border-b">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h3 className="font-semibold text-lg leading-tight">{post.title}</h3>
-                                        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={post.author.avatar} />
-                                                <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-medium text-foreground">{post.author.name}</span>
-                                            {getRoleBadge(post.author.role)}
-                                            <span>•</span>
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                <span>{formatDate(post.createdAt)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="prose prose-sm max-w-none mb-6">
-                                    {post.content}
-                                </div>
-
-                                <Separator className="my-4" />
-
-                                {/* Comments section */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-medium flex items-center gap-2 text-sm">
-                                            <MessageSquare className="h-4 w-4" />
-                                            {post.comments.length} {post.comments.length === 1 ? 'Comment' : 'Comments'}
-                                        </h4>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-primary"
-                                            onClick={() => setReplyingTo(replyingTo === 'post-' + post.id ? null : 'post-' + post.id)}
-                                        >
-                                            {replyingTo === 'post-' + post.id ? 'Cancel' : 'Add Comment'}
-                                        </Button>
-                                    </div>
-
-                                    {/* Comment form for the post */}
-                                    {replyingTo === 'post-' + post.id && (
-                                        <div className="flex gap-3">
-                                            <Avatar className="h-9 w-9 mt-1">
-                                                <AvatarImage src={currentUser.avatar} />
-                                                <AvatarFallback>Y</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 space-y-3">
-                                                <RichTextEditor
-                                                    content={newComment}
-                                                    onChange={setNewComment}
-                                                    placeholder="Write your comment..."
-                                                    className="min-h-[100px]"
-                                                />
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => setReplyingTo(null)}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => handleAddComment(post.id)}
-                                                        disabled={!newComment.trim()}
-                                                    >
-                                                        <Send className="h-4 w-4 mr-2" />
-                                                        Post Comment
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Comments list */}
-                                    <div className="space-y-6">
-                                        {post.comments.map(comment => (
-                                            <div key={comment.id} className="space-y-4">
-                                                {/* Main comment */}
-                                                <div className="flex gap-3">
-                                                    <Avatar className="h-9 w-9">
-                                                        <AvatarImage src={comment.author.avatar} />
-                                                        <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-medium">{comment.author.name}</span>
-                                                                {getRoleBadge(comment.author.role)}
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {formatDate(comment.createdAt)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-muted-foreground hover:text-primary"
-                                                                    onClick={() => {
-                                                                        setReplyingTo(replyingTo === comment.id ? null : comment.id);
-                                                                        setEditingComment(null);
-                                                                    }}
-                                                                >
-                                                                    Reply
-                                                                </Button>
-                                                                {comment.author.id === currentUser.id && (
-                                                                    <>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 px-2 text-muted-foreground hover:text-primary"
-                                                                            onClick={() => {
-                                                                                setEditingComment(comment.id);
-                                                                                setNewComment(comment.content);
-                                                                                setReplyingTo(null);
-                                                                            }}
-                                                                        >
-                                                                            Edit
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                                                                            onClick={() => handleDeleteComment(post.id, comment.id)}
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2">
-                                                            {editingComment === comment.id ? (
-                                                                <div className="space-y-3">
-                                                                    <RichTextEditor
-                                                                        content={newComment}
-                                                                        onChange={setNewComment}
-                                                                        className="min-h-[100px]"
-                                                                    />
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            size="sm"
-                                                                            onClick={() => {
-                                                                                // Handle update logic
-                                                                                setEditingComment(null);
-                                                                                setNewComment('');
-                                                                            }}
-                                                                        >
-                                                                            Save Changes
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            size="sm"
-                                                                            onClick={() => setEditingComment(null)}
-                                                                        >
-                                                                            Cancel
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: comment.content }} />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Replies */}
-                                                {comment.replies.length > 0 && (
-                                                    <div className="ml-12 pl-4 border-l-2 border-muted-foreground/20 space-y-4">
-                                                        {comment.replies.map(reply => (
-                                                            <div key={reply.id} className="flex gap-3 pt-2">
-                                                                <Avatar className="h-8 w-8">
-                                                                    <AvatarImage src={reply.author.avatar} />
-                                                                    <AvatarFallback>{reply.author.name.charAt(0)}</AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="font-medium text-sm">{reply.author.name}</span>
-                                                                            {getRoleBadge(reply.author.role)}
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {formatDate(reply.createdAt)}
-                                                                            </span>
-                                                                        </div>
-                                                                        {reply.author.id === currentUser.id && (
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="h-7 px-2 text-muted-foreground hover:text-destructive"
-                                                                                onClick={() => handleDeleteComment(post.id, reply.id, true, comment.id)}
-                                                                            >
-                                                                                <Trash2 className="h-3 w-3" />
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="mt-1 text-sm">
-                                                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: reply.content }} />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* Reply form */}
-                                                {replyingTo === comment.id && (
-                                                    <div className="ml-12 pl-4 space-y-3">
-                                                        <RichTextEditor
-                                                            content={newComment}
-                                                            onChange={setNewComment}
-                                                            placeholder={`Reply to ${comment.author.name}...`}
-                                                            className="min-h-[80px]"
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => handleAddReply(post.id, comment.id)}
-                                                            >
-                                                                <Send className="h-4 w-4 mr-2" />
-                                                                Post Reply
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => setReplyingTo(null)}
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
-}
+};
