@@ -1,4 +1,3 @@
-// StudentDashboard.jsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -17,7 +16,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useStudentDashboardStore } from '../../zustand/student/studentDashboard';
 
-// Icon mapping for dynamic icon rendering
 const iconComponents = {
   CheckCircle,
   Trophy,
@@ -40,6 +38,21 @@ export function StudentDashboard() {
     updatePreparation
   } = useStudentDashboardStore();
 
+  const handleStartPreparation = (assessment) => {
+    // Update preparation progress
+    const newPrep = Math.min(assessment.preparation + 10, 100);
+    updatePreparation(assessment.id, newPrep);
+    
+    // Navigate to materials page with course info
+    navigate('/learn', {
+      state: {
+        course: assessment.course,
+        type: 'lecture', // Default to lecture materials
+        assessmentId: assessment.id
+      }
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -56,7 +69,7 @@ export function StudentDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
         {stats.map((stat) => {
           const IconComponent = iconComponents[stat.icon];
           return (
@@ -103,6 +116,9 @@ export function StudentDashboard() {
                     <span className="text-xs px-2 py-1 bg-muted rounded-full">
                       {assessment.type}
                     </span>
+                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                      {assessment.course}
+                    </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                     <span className="flex items-center">
@@ -125,14 +141,7 @@ export function StudentDashboard() {
                 </div>
                 <Button
                   variant={assessment.preparation > 0 ? "default" : "outline"}
-                  onClick={() => {
-                    // Example of updating preparation when button is clicked
-                    const newPrep = assessment.preparation + 10;
-                    if (newPrep <= 100) {
-                      updatePreparation(assessment.id, newPrep);
-                    }
-                    navigate(`/assessments/${assessment.id}`);
-                  }}
+                  onClick={() => handleStartPreparation(assessment)}
                 >
                   {assessment.preparation > 0 ? 'Continue Prep' : 'Start Prep'}
                 </Button>

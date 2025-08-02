@@ -36,7 +36,7 @@ const questionBank = [
                 name: 'Algebra',
                 questions: [
                     {
-                        id: '1',
+                        id: '1.1',
                         question: 'Solve for x: 2x + 5 = 13',
                         difficulty: 'Easy',
                         options: ['x = 4', 'x = 6', 'x = 8', 'x = 9'],
@@ -63,7 +63,7 @@ const questionBank = [
                         questionCount: 25,
                         questions: [
                             {
-                                id: '2',
+                                id: '1.2',
                                 question: 'Solve for x: 3x - 7 = 14',
                                 difficulty: 'Easy',
                                 options: ['x = 7', 'x = 6', 'x = 8', 'x = 9'],
@@ -82,7 +82,7 @@ const questionBank = [
                         questionCount: 18,
                         questions: [
                             {
-                                id: '4',
+                                id: '1.3',
                                 question: 'Find the value of x: 3x - 7 = 11',
                                 difficulty: 'Easy',
                                 options: ['x = 4', 'x = 6', 'x = 5', 'x = 7'],
@@ -107,7 +107,7 @@ const questionBank = [
                         questionCount: 15,
                         questions: [
                             {
-                                id: '6',
+                                id: '1.4',
                                 question: 'How many sides does a hexagon have?',
                                 type: 'Multiple Choice',
                                 difficulty: 'Easy',
@@ -139,7 +139,7 @@ const questionBank = [
                         questionCount: 30,
                         questions: [
                             {
-                                id: '3',
+                                id: '1.5',
                                 question: 'Explain Newton first law of motion with an example.',
                                 type: 'Long Answer',
                                 topic: 'mechanics',
