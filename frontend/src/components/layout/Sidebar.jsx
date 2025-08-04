@@ -20,7 +20,7 @@ export function Sidebar() {
     { to: '/dashboard', icon: BarChart3, label: 'Dashboard' },
     { to: '/content', icon: BookOpen, label: 'Content Units' },
     { to: '/content/create', icon: PlusCircle, label: 'Create Unit' },
-    { to: '/questions/create', icon: FileText, label: 'Create Questions' },
+    { to: '/questions/create', icon: FileText, label: 'Modify Questions' },
     { to: '/question-bank', icon: Library, label: 'Question Bank' },
     { to: '/learningUnits', icon: NotebookIcon, label: "Learning Units" },
     { to: "/comments", icon: MessageSquare, label: "Comments" },
@@ -29,8 +29,9 @@ export function Sidebar() {
 
   const reviewerNavItems = [
     { to: "/dashboard", icon: BarChart3, label: "Dashboard" },
-    { to: "/reviews", icon: CheckSquare, label: "Reviews" },
     { to: "/content", icon: BookOpen, label: "Content Units" },
+    { to: '/content/create', icon: PlusCircle, label: 'Create Unit' },
+    { to: '/questions/create', icon: FileText, label: 'Modify Questions' },
     { to: "/question-bank", icon: Library, label: "Question Bank" },
     { to: "/comments", icon: MessageSquare, label: "Comments" },
   ];

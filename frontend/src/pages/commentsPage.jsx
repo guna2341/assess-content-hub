@@ -1,562 +1,803 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { useState, useEffect, useRef } from 'react';
+import { useToast } from "@/hooks/use-toast";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
     Send,
-    Edit,
-    Trash2,
-    User,
-    Shield,
-    MessageSquare,
-    Plus,
-    ChevronDown,
-    ChevronRight,
-    Clock
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+    ArrowLeft,
+    Mail,
+    Users,
+    Search,
+    Loader2,
+    MessageCircle,
+    Clock,
+    FileQuestion,
+    CheckCircle,
+    XCircle,
+    AlertCircle,
+    Upload,
+    Filter
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import CHAT_SERVICES from '../api/services/chat';
+import USER_SERVICES from '../api/services/user';
+import secureLocalStorage from 'react-secure-storage';
+import { useAuthStore } from '@/stores/authStore';
+import io from 'socket.io-client';
 
-export function CommentsPage() {
+export const CommentsPage = () => {
     const { toast } = useToast();
-    const [posts, setPosts] = useState([
-        {
-            id: '1',
-            title: 'What is the chemical formula for water?',
-            content: 'I need help understanding basic chemistry concepts. Can someone explain the molecular structure of water and why it\'s essential for life?',
-            author: {
-                id: 'user1',
-                name: 'Student123',
-                role: 'user',
-                avatar: '/avatars/user1.jpg'
-            },
-            createdAt: '2024-01-20T14:30:00Z',
-            comments: [
-                {
-                    id: 'c1',
-                    content: 'The formula is H₂O - two hydrogen atoms and one oxygen atom. This simple structure gives water its unique properties like high surface tension and ability to dissolve many substances.',
-                    author: {
-                        id: 'user2',
-                        name: 'ChemistryTutor',
-                        role: 'expert',
-                        avatar: '/avatars/user2.jpg'
-                    },
-                    createdAt: '2024-01-20T15:15:00Z',
-                    replies: [
-                        {
-                            id: 'r1',
-                            content: 'Also worth mentioning about heavy water (D₂O) which is used in nuclear reactors. It has deuterium instead of regular hydrogen.',
-                            author: {
-                                id: 'user3',
-                                name: 'ScienceProf',
-                                role: 'admin',
-                                avatar: '/avatars/user3.jpg'
-                            },
-                            createdAt: '2024-01-20T16:30:00Z'
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            id: '2',
-            title: 'Best resources for learning React?',
-            content: 'Looking for recommendations for React tutorials and courses. I\'m particularly interested in hooks and context API.',
-            author: {
-                id: 'user4',
-                name: 'CodeNewbie',
-                role: 'user',
-                avatar: '/avatars/user4.jpg'
-            },
-            createdAt: '2024-01-18T09:20:00Z',
-            comments: []
-        }
-    ]);
+    const [conversations, setConversations] = useState([]);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSending, setIsSending] = useState(false);
+    const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+    const [isNearBottom, setIsNearBottom] = useState(true);
 
-    const [newPost, setNewPost] = useState({
-        title: '',
-        content: ''
-    });
+    // Chat/Questions view toggle for selected faculty
+    const [facultyViewMode, setFacultyViewMode] = useState('messages'); // 'messages' or 'questions'
 
-    const [newComment, setNewComment] = useState('');
-    const [replyingTo, setReplyingTo] = useState(null);
-    const [editingComment, setEditingComment] = useState(null);
-    const [showPostForm, setShowPostForm] = useState(false);
+    // Questions related states
+    const [questions, setQuestions] = useState([]);
+    const [questionsLoading, setQuestionsLoading] = useState(false);
+    const [questionFilter, setQuestionFilter] = useState('all'); // all, pending, approved, rejected
+
+    const { user } = useAuthStore();
+
+    // Socket.IO reference
+    const socketRef = useRef(null);
+    const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
 
     const currentUser = {
-        id: 'current-user',
-        name: 'You',
-        role: 'user',
-        avatar: '/avatars/current-user.jpg'
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role
     };
 
-    const handleCreatePost = () => {
-        if (!newPost.title.trim() || !newPost.content.trim()) {
-            toast({
-                title: 'Missing information',
-                description: 'Please provide both a title and content for your post',
-                variant: 'destructive'
-            });
-            return;
+    // Check if user is near bottom of chat
+    const checkIfNearBottom = () => {
+        if (messagesContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+            const threshold = 100; // pixels from bottom
+            const nearBottom = scrollHeight - scrollTop - clientHeight < threshold;
+            setIsNearBottom(nearBottom);
+            return nearBottom;
         }
-
-        const post = {
-            id: Date.now().toString(),
-            title: newPost.title,
-            content: newPost.content,
-            author: currentUser,
-            createdAt: new Date().toISOString(),
-            comments: []
-        };
-
-        setPosts([post, ...posts]);
-        setNewPost({ title: '', content: '' });
-        setShowPostForm(false);
-
-        toast({
-            title: 'Post created',
-            description: 'Your discussion post has been published'
-        });
+        return true;
     };
 
-    const handleAddComment = (postId) => {
-        if (!newComment.trim()) {
-            toast({
-                title: 'Empty comment',
-                description: 'Please write something before posting',
-                variant: 'destructive'
-            });
-            return;
+    // Scroll to bottom function
+    const scrollToBottom = (behavior = 'smooth') => {
+        messagesEndRef.current?.scrollIntoView({ behavior });
+    };
+
+    // Handle scroll events
+    const handleScroll = () => {
+        checkIfNearBottom();
+    };
+
+    // Auto scroll logic - only scroll if user is near bottom or it's a new conversation
+    useEffect(() => {
+        if (shouldAutoScroll || isNearBottom) {
+            scrollToBottom('smooth');
         }
-
-        const comment = {
-            id: `comment-${Date.now()}`,
-            content: newComment,
-            author: currentUser,
-            createdAt: new Date().toISOString(),
-            replies: []
-        };
-
-        setPosts(posts.map(post =>
-            post.id === postId
-                ? { ...post, comments: [...post.comments, comment] }
-                : post
-        ));
-        setNewComment('');
-        setReplyingTo(null);
-
-        toast({
-            title: 'Comment added',
-            description: 'Your response has been posted'
-        });
-    };
-
-    const handleAddReply = (postId, commentId) => {
-        if (!newComment.trim()) {
-            toast({
-                title: 'Empty reply',
-                description: 'Please write something before posting',
-                variant: 'destructive'
-            });
-            return;
+        // Reset shouldAutoScroll after first scroll
+        if (shouldAutoScroll) {
+            setShouldAutoScroll(false);
         }
+    }, [messages]);
 
-        const reply = {
-            id: `reply-${Date.now()}`,
-            content: newComment,
-            author: currentUser,
-            createdAt: new Date().toISOString()
-        };
+    // Initialize Socket.IO connection
+    useEffect(() => {
+        // Connect to socket server
+        socketRef.current = io('http://localhost:5000');
 
-        setPosts(posts.map(post => {
-            if (post.id === postId) {
-                return {
-                    ...post,
-                    comments: post.comments.map(comment => {
-                        if (comment.id === commentId) {
-                            return {
-                                ...comment,
-                                replies: [...comment.replies, reply]
-                            };
-                        }
-                        return comment;
-                    })
-                };
-            }
-            return post;
-        }));
+        // Register user with socket server
+        socketRef.current.emit('registerUser', currentUser.id);
 
-        setNewComment('');
-        setReplyingTo(null);
+        // Listen for new messages
+        socketRef.current.on('newMessage', (message) => {
+            // Only update if the message is for current conversation
+            if (selectedConversation &&
+                (message.sender_id === selectedConversation.id ||
+                    message.receiver_id === selectedConversation.id)) {
 
-        toast({
-            title: 'Reply added',
-            description: 'Your reply has been posted'
-        });
-    };
+                // Check if message already exists to prevent duplicates
+                setMessages(prev => {
+                    const existingMessage = prev.find(m => m.id === message.id);
+                    if (existingMessage) {
+                        return prev; // Don't add if already exists
+                    }
+                    return [...prev, message];
+                });
 
-    const handleDeleteComment = (postId, commentId, isReply = false, parentCommentId = null) => {
-        setPosts(posts.map(post => {
-            if (post.id === postId) {
-                if (isReply) {
-                    return {
-                        ...post,
-                        comments: post.comments.map(comment => {
-                            if (comment.id === parentCommentId) {
-                                return {
-                                    ...comment,
-                                    replies: comment.replies.filter(reply => reply.id !== commentId)
-                                };
-                            }
-                            return comment;
-                        })
-                    };
-                } else {
-                    return {
-                        ...post,
-                        comments: post.comments.filter(comment => comment.id !== commentId)
-                    };
+                // If the message is from the current user to the selected conversation,
+                // mark it as read immediately
+                if (message.sender_id === selectedConversation.id &&
+                    message.receiver_id === currentUser.id) {
+                    // Mark as read via socket
+                    socketRef.current.emit('markMessagesAsRead', {
+                        senderId: message.sender_id,
+                        receiverId: currentUser.id
+                    });
                 }
             }
-            return post;
-        }));
 
-        toast({
-            title: 'Comment deleted',
-            description: 'The comment has been removed'
+            // Update last message in conversations list
+            setConversations(prev => prev.map(conv => {
+                if (conv.id === message.sender_id || conv.id === message.receiver_id) {
+                    const isCurrentConversation = selectedConversation &&
+                        (conv.id === selectedConversation.id);
+
+                    return {
+                        ...conv,
+                        lastMessage: message.message,
+                        lastMessageTime: message.created_at,
+                        // Don't increment unread count if this is the current conversation
+                        // and the user is not the sender
+                        unreadCount: isCurrentConversation && message.sender_id !== currentUser.id
+                            ? conv.unreadCount || 0
+                            : message.sender_id === currentUser.id
+                                ? conv.unreadCount || 0
+                                : (conv.unreadCount || 0) + 1
+                    };
+                }
+                return conv;
+            }));
         });
+
+        // Listen for question status updates (these will come as special messages)
+        socketRef.current.on('questionStatusUpdate', (data) => {
+            // This will be handled when you implement the backend
+            console.log('Question status update:', data);
+
+            // Reload questions if we're viewing the questions for this faculty
+            if (selectedConversation && selectedConversation.id === data.facultyId && facultyViewMode === 'questions') {
+                loadFacultyQuestions(selectedConversation.id);
+            }
+
+            // You can add a toast notification here
+            toast({
+                title: `Question ${data.status}`,
+                description: `Question "${data.questionTitle}" has been ${data.status.toLowerCase()}`,
+                variant: data.status === 'approved' ? 'default' : data.status === 'rejected' ? 'destructive' : 'default'
+            });
+        });
+
+        // Listen for unread count updates
+        socketRef.current.on('unreadCountUpdate', ({ senderId, count }) => {
+            setConversations(prev => prev.map(conv =>
+                conv.id === senderId
+                    ? { ...conv, unreadCount: count }
+                    : conv
+            ));
+        });
+
+        // Listen for messages marked as read
+        socketRef.current.on('messagesMarkedAsRead', ({ receiverId }) => {
+            // Update conversation to show messages as read
+            setConversations(prev => prev.map(conv =>
+                conv.id === receiverId
+                    ? { ...conv, unreadCount: 0 }
+                    : conv
+            ));
+        });
+
+        // Cleanup on unmount
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+        };
+    }, [currentUser.id, selectedConversation, facultyViewMode]);
+
+    // Load initial data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setIsLoading(true);
+
+                // Get appropriate chat partners based on role
+                const response = await USER_SERVICES.getChatPartners(currentUser.role, currentUser.id);
+
+                // Handle the response based on your original controller format
+                if (response.data) {
+                    // If your controller returns { data: [...] }
+                    setConversations(Array.isArray(response.data) ? response.data : []);
+                } else if (Array.isArray(response)) {
+                    // If your controller returns the array directly
+                    setConversations(response);
+                } else {
+                    console.error('Unexpected response format:', response);
+                    setConversations([]);
+                }
+
+                // Load unread counts
+                const unreadResponse = await CHAT_SERVICES.getUnreadCount(currentUser.id);
+
+                // Handle unread response (your original controller returns array directly)
+                if (unreadResponse.data && Array.isArray(unreadResponse.data)) {
+                    updateUnreadCounts(unreadResponse.data);
+                } else if (Array.isArray(unreadResponse)) {
+                    updateUnreadCounts(unreadResponse);
+                }
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                toast({
+                    title: 'Error loading conversations',
+                    description: error.response?.data?.message || 'Could not fetch your chat list',
+                    variant: 'destructive'
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (currentUser.id) {
+            loadData();
+        }
+    }, [currentUser.id]);
+
+    // Load messages or questions when conversation is selected or view mode changes
+    useEffect(() => {
+        if (selectedConversation) {
+            if (facultyViewMode === 'messages') {
+                // Set auto-scroll to true for new conversation
+                setShouldAutoScroll(true);
+                setIsNearBottom(true);
+
+                loadMessages(selectedConversation.id);
+                markMessagesAsRead(selectedConversation.id);
+
+                // Join the chat room for this conversation
+                if (socketRef.current) {
+                    socketRef.current.emit('joinChatRoom', {
+                        userId1: currentUser.id,
+                        userId2: selectedConversation.id
+                    });
+                }
+            } else if (facultyViewMode === 'questions') {
+                loadFacultyQuestions(selectedConversation.id);
+            }
+        }
+    }, [selectedConversation, facultyViewMode]);
+
+    const loadMessages = async (userId) => {
+        try {
+            const response = await CHAT_SERVICES.getChatHistory(
+                currentUser.id,
+                userId
+            );
+
+            // Your original controller returns messages directly, not wrapped in { success, data }
+            if (response.data && Array.isArray(response.data)) {
+                // Remove duplicates based on message id
+                const uniqueMessages = response.data.filter((message, index, self) =>
+                    index === self.findIndex(m => m.id === message.id)
+                );
+
+                setMessages(uniqueMessages);
+            } else {
+                console.error('Failed to load messages:', response);
+                toast({
+                    title: 'Error loading messages',
+                    description: 'Could not fetch chat history',
+                    variant: 'destructive'
+                });
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            toast({
+                title: 'Error loading messages',
+                description: error.response?.data?.message || 'Could not fetch chat history',
+                variant: 'destructive'
+            });
+        }
+    };
+
+    const loadFacultyQuestions = async (facultyId) => {
+        try {
+            setQuestionsLoading(true);
+            // TODO: Implement API call to load questions for specific faculty
+            // const response = await QUESTION_SERVICES.getFacultyQuestions(facultyId);
+            // setQuestions(response.data || []);
+
+            // For now, set empty array - you'll implement this later
+            setQuestions([]);
+        } catch (error) {
+            console.error('Error loading faculty questions:', error);
+            toast({
+                title: 'Error loading questions',
+                description: 'Could not fetch questions for this faculty',
+                variant: 'destructive'
+            });
+        } finally {
+            setQuestionsLoading(false);
+        }
+    };
+
+    const markMessagesAsRead = async (userId) => {
+        console.log("Marking messages as read from:", userId, "to:", currentUser.id);
+
+        try {
+            // Mark as read via API
+            await CHAT_SERVICES.markMessagesAsRead(
+                userId,
+                currentUser.id
+            );
+
+            // Also mark as read via socket for real-time updates
+            if (socketRef.current) {
+                socketRef.current.emit('markMessagesAsRead', {
+                    senderId: userId,
+                    receiverId: currentUser.id
+                });
+            }
+
+            // Update local state
+            setConversations(prev => prev.map(conv =>
+                conv.id === userId
+                    ? { ...conv, unreadCount: 0 }
+                    : conv
+            ));
+        } catch (error) {
+            console.error('Error marking messages as read:', error);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        if (!newMessage.trim()) {
+            toast({
+                title: 'Empty message',
+                description: 'Please write something before sending',
+                variant: 'destructive'
+            });
+            return;
+        }
+
+        try {
+            setIsSending(true);
+
+            // Force scroll to bottom when user sends a message
+            setIsNearBottom(true);
+
+            // ONLY send via Socket.IO - let the server handle database saving
+            if (socketRef.current) {
+                socketRef.current.emit('sendMessage', {
+                    senderId: currentUser.id,
+                    receiverId: selectedConversation.id,
+                    message: newMessage
+                });
+            }
+
+            // Clear the input immediately
+            setNewMessage('');
+
+        } catch (error) {
+            toast({
+                title: 'Error sending message',
+                description: 'Could not send your message',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const updateUnreadCounts = (unreadData) => {
+        setConversations(prev => prev.map(conv => {
+            const unread = unreadData.find(item => item.sender_id === conv.id);
+            return {
+                ...conv,
+                unreadCount: unread ? unread.count : 0
+            };
+        }));
+    };
+
+    const formatTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
+        return date.toLocaleDateString([], {
+            year: 'numeric',
             month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            day: 'numeric'
         });
     };
 
-    const getRoleBadge = (role) => {
-        switch (role) {
-            case 'admin':
-                return (
-                    <Badge variant="secondary" className="flex items-center gap-1 text-xs">
-                        <Shield className="h-3 w-3" />
-                        Admin
-                    </Badge>
-                );
-            case 'expert':
-                return <Badge variant="secondary" className="text-xs">Expert</Badge>;
+    const filteredConversations = conversations.filter(conv =>
+        conv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        conv.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const filteredQuestions = questions.filter(question => {
+        if (questionFilter === 'all') return true;
+        return question.status === questionFilter;
+    });
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'pending':
+                return 'bg-orange-100 text-orange-800 border-orange-200';
+            case 'approved':
+                return 'bg-green-100 text-green-800 border-green-200';
+            case 'rejected':
+                return 'bg-red-100 text-red-800 border-red-200';
             default:
-                return null;
+                return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     };
 
-    return (
-        <div className="mx-auto space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Community Discussions</h1>
-                    <p className="text-muted-foreground">Ask questions and share knowledge with the community</p>
-                </div>
-                <Button onClick={() => setShowPostForm(!showPostForm)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Post
-                </Button>
-            </div>
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'pending':
+                return <AlertCircle className="h-3 w-3" />;
+            case 'approved':
+                return <CheckCircle className="h-3 w-3" />;
+            case 'rejected':
+                return <XCircle className="h-3 w-3" />;
+            default:
+                return <AlertCircle className="h-3 w-3" />;
+        }
+    };
 
-            {/* New Post Form */}
-            {showPostForm && (
-                <Card className="border-none shadow-sm">
-                    <CardContent className="p-6 space-y-4">
-                        <h2 className="font-semibold text-lg">Create a New Post</h2>
-                        <Input
-                            placeholder="Post title"
-                            value={newPost.title}
-                            onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                            className="text-base"
-                        />
-                        <RichTextEditor
-                            content={newPost.content}
-                            onChange={(content) => setNewPost({ ...newPost, content })}
-                            placeholder="Write your post content here..."
-                            className="min-h-[150px]"
-                        />
-                        <div className="flex justify-end gap-2 pt-2">
-                            <Button variant="outline" onClick={() => setShowPostForm(false)}>
-                                Cancel
-                            </Button>
-                            <Button onClick={handleCreatePost}>
-                                Post Discussion
-                            </Button>
+    const renderFacultyQuestions = () => (
+        <div className="flex-1 overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50/30">
+
+            {/* Questions Content */}
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                {questionsLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="flex flex-col items-center gap-3">
+                            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                            <p className="text-sm text-gray-500">Loading questions...</p>
                         </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Posts List */}
-            <div className="space-y-6">
-                {posts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
-                        <MessageSquare className="h-12 w-12 text-muted-foreground" />
-                        <h3 className="text-lg font-medium">No discussions yet</h3>
-                        <p className="text-muted-foreground">Be the first to start a discussion</p>
-                        <Button onClick={() => setShowPostForm(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Post
-                        </Button>
                     </div>
-                ) : (
-                    posts.map(post => (
-                        <Card key={post.id} className="overflow-hidden shadow-sm">
-                            <CardHeader className="px-6 py-4 border-b">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h3 className="font-semibold text-lg leading-tight">{post.title}</h3>
-                                        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={post.author.avatar} />
-                                                <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="font-medium text-foreground">{post.author.name}</span>
-                                            {getRoleBadge(post.author.role)}
-                                            <span>•</span>
-                                            <div className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                <span>{formatDate(post.createdAt)}</span>
+                ) : filteredQuestions.length > 0 ? (
+                    <div className="space-y-4">
+                        {filteredQuestions.map((question) => (
+                            <Card key={question.id} className="bg-white/80 backdrop-blur-sm border-slate-200/60 hover:shadow-lg transition-all duration-200 hover:translate-y-[-2px]">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <CardTitle className="text-lg font-semibold text-gray-800 mb-2">
+                                                {question.title}
+                                            </CardTitle>
+                                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    {formatDate(question.created_at)}
+                                                </span>
+                                                <span>•</span>
+                                                <span>{question.subject}</span>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="prose prose-sm max-w-none mb-6">
-                                    {post.content}
-                                </div>
-
-                                <Separator className="my-4" />
-
-                                {/* Comments section */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-medium flex items-center gap-2 text-sm">
-                                            <MessageSquare className="h-4 w-4" />
-                                            {post.comments.length} {post.comments.length === 1 ? 'Comment' : 'Comments'}
-                                        </h4>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-primary"
-                                            onClick={() => setReplyingTo(replyingTo === 'post-' + post.id ? null : 'post-' + post.id)}
+                                        <Badge
+                                            className={`${getStatusColor(question.status)} border font-medium`}
                                         >
-                                            {replyingTo === 'post-' + post.id ? 'Cancel' : 'Add Comment'}
-                                        </Button>
-                                    </div>
-
-                                    {/* Comment form for the post */}
-                                    {replyingTo === 'post-' + post.id && (
-                                        <div className="flex gap-3">
-                                            <Avatar className="h-9 w-9 mt-1">
-                                                <AvatarImage src={currentUser.avatar} />
-                                                <AvatarFallback>Y</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 space-y-3">
-                                                <RichTextEditor
-                                                    content={newComment}
-                                                    onChange={setNewComment}
-                                                    placeholder="Write your comment..."
-                                                    className="min-h-[100px]"
-                                                />
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => setReplyingTo(null)}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => handleAddComment(post.id)}
-                                                        disabled={!newComment.trim()}
-                                                    >
-                                                        <Send className="h-4 w-4 mr-2" />
-                                                        Post Comment
-                                                    </Button>
-                                                </div>
+                                            <div className="flex items-center gap-1">
+                                                {getStatusIcon(question.status)}
+                                                <span className="capitalize">{question.status}</span>
                                             </div>
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                                        {question.description}
+                                    </p>
+                                    {question.feedback && (
+                                        <div className="mt-4 p-3 bg-blue-50/80 rounded-lg border border-blue-200/50">
+                                            <p className="text-sm font-medium text-blue-900 mb-1">Feedback:</p>
+                                            <p className="text-sm text-blue-800">{question.feedback}</p>
                                         </div>
                                     )}
-
-                                    {/* Comments list */}
-                                    <div className="space-y-6">
-                                        {post.comments.map(comment => (
-                                            <div key={comment.id} className="space-y-4">
-                                                {/* Main comment */}
-                                                <div className="flex gap-3">
-                                                    <Avatar className="h-9 w-9">
-                                                        <AvatarImage src={comment.author.avatar} />
-                                                        <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="font-medium">{comment.author.name}</span>
-                                                                {getRoleBadge(comment.author.role)}
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {formatDate(comment.createdAt)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 px-2 text-muted-foreground hover:text-primary"
-                                                                    onClick={() => {
-                                                                        setReplyingTo(replyingTo === comment.id ? null : comment.id);
-                                                                        setEditingComment(null);
-                                                                    }}
-                                                                >
-                                                                    Reply
-                                                                </Button>
-                                                                {comment.author.id === currentUser.id && (
-                                                                    <>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 px-2 text-muted-foreground hover:text-primary"
-                                                                            onClick={() => {
-                                                                                setEditingComment(comment.id);
-                                                                                setNewComment(comment.content);
-                                                                                setReplyingTo(null);
-                                                                            }}
-                                                                        >
-                                                                            Edit
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 px-2 text-muted-foreground hover:text-destructive"
-                                                                            onClick={() => handleDeleteComment(post.id, comment.id)}
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="mt-2">
-                                                            {editingComment === comment.id ? (
-                                                                <div className="space-y-3">
-                                                                    <RichTextEditor
-                                                                        content={newComment}
-                                                                        onChange={setNewComment}
-                                                                        className="min-h-[100px]"
-                                                                    />
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            size="sm"
-                                                                            onClick={() => {
-                                                                                // Handle update logic
-                                                                                setEditingComment(null);
-                                                                                setNewComment('');
-                                                                            }}
-                                                                        >
-                                                                            Save Changes
-                                                                        </Button>
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            size="sm"
-                                                                            onClick={() => setEditingComment(null)}
-                                                                        >
-                                                                            Cancel
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: comment.content }} />
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Replies */}
-                                                {comment.replies.length > 0 && (
-                                                    <div className="ml-12 pl-4 border-l-2 border-muted-foreground/20 space-y-4">
-                                                        {comment.replies.map(reply => (
-                                                            <div key={reply.id} className="flex gap-3 pt-2">
-                                                                <Avatar className="h-8 w-8">
-                                                                    <AvatarImage src={reply.author.avatar} />
-                                                                    <AvatarFallback>{reply.author.name.charAt(0)}</AvatarFallback>
-                                                                </Avatar>
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="font-medium text-sm">{reply.author.name}</span>
-                                                                            {getRoleBadge(reply.author.role)}
-                                                                            <span className="text-xs text-muted-foreground">
-                                                                                {formatDate(reply.createdAt)}
-                                                                            </span>
-                                                                        </div>
-                                                                        {reply.author.id === currentUser.id && (
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="h-7 px-2 text-muted-foreground hover:text-destructive"
-                                                                                onClick={() => handleDeleteComment(post.id, reply.id, true, comment.id)}
-                                                                            >
-                                                                                <Trash2 className="h-3 w-3" />
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="mt-1 text-sm">
-                                                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: reply.content }} />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* Reply form */}
-                                                {replyingTo === comment.id && (
-                                                    <div className="ml-12 pl-4 space-y-3">
-                                                        <RichTextEditor
-                                                            content={newComment}
-                                                            onChange={setNewComment}
-                                                            placeholder={`Reply to ${comment.author.name}...`}
-                                                            className="min-h-[80px]"
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => handleAddReply(post.id, comment.id)}
-                                                            >
-                                                                <Send className="h-4 w-4 mr-2" />
-                                                                Post Reply
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => setReplyingTo(null)}
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                        <div className="p-6 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-6">
+                            <FileQuestion className="h-16 w-16 text-blue-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-700 mb-3">
+                            {questionFilter === 'all'
+                                ? `No questions from ${selectedConversation?.name}`
+                                : `No ${questionFilter} questions from ${selectedConversation?.name}`}
+                        </h3>
+                        <p className="text-gray-500 max-w-md leading-relaxed">
+                            {questionFilter === 'all'
+                                ? `${selectedConversation?.name} hasn't uploaded any questions yet.`
+                                : `${selectedConversation?.name} doesn't have any ${questionFilter} questions.`}
+                        </p>
+                    </div>
                 )}
             </div>
         </div>
     );
-}
+
+    return (
+        <div className="flex flex-col h-[calc(100vh-7.5rem)] bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-xl overflow-hidden border border-slate-200/60">
+            <div className="flex flex-1 overflow-hidden">
+                {/* Conversations List - Always visible */}
+                <div className={`${selectedConversation ? 'hidden lg:block lg:w-80' : 'w-full'} bg-white/80 backdrop-blur-sm border-r border-slate-200/60`}>
+                    <div className="p-6 border-b border-slate-200/60 bg-white/90">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                                    <Users className="h-5 w-5 text-white" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-800">Faculties</h2>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                                placeholder="Search faculties..."
+                                className="pl-10 bg-white/70 border-slate-200/80 focus:bg-white focus:border-blue-300 transition-all duration-200"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="overflow-y-auto h-[calc(100%-140px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center p-12">
+                                <div className="flex flex-col items-center gap-3">
+                                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                                    <p className="text-sm text-gray-500">Loading faculties...</p>
+                                </div>
+                            </div>
+                        ) : filteredConversations.length > 0 ? (
+                            <div className="p-2">
+                                {filteredConversations.map((conv) => (
+                                    <div
+                                        key={conv.id}
+                                        className={`p-4 mb-2 cursor-pointer rounded-xl transition-all duration-200 hover:bg-blue-50/80 hover:shadow-sm group ${selectedConversation?.id === conv.id
+                                                ? 'bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm border border-blue-200/50'
+                                                : 'hover:translate-x-1'
+                                            }`}
+                                        onClick={() => {
+                                            setSelectedConversation(conv);
+                                            setFacultyViewMode('messages'); // Default to messages when selecting a faculty
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative">
+                                                <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
+                                                    <AvatarImage src={conv.avatar} />
+                                                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white font-semibold">
+                                                        {conv.name.split(' ').map(n => n[0]).join('')}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                {conv.is_online && (
+                                                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white shadow-sm" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <p className="font-semibold text-gray-800 truncate group-hover:text-blue-700 transition-colors">
+                                                        {conv.name}
+                                                    </p>
+                                                    {conv.unreadCount > 0 && (
+                                                        <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white h-5 w-5 p-0 flex items-center justify-center text-xs font-bold shadow-sm">
+                                                            {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-gray-500 truncate">
+                                                    {conv.department || 'Faculty'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-12 text-center">
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="p-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full">
+                                        <Users className="h-12 w-12 text-gray-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-600 mb-1">
+                                            {searchTerm ? 'No matching faculties' : 'No faculties available'}
+                                        </h3>
+                                        <p className="text-sm text-gray-400">
+                                            {searchTerm ? 'Try a different search term' : 'Faculty list will appear here'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Chat/Questions Area */}
+                {selectedConversation ? (
+                    <div className="flex-1 flex flex-col bg-white">
+                        {/* Faculty Header with Message/Questions Toggle */}
+                        <div className="p-4 pt-6 border-b border-slate-200/60 bg-gradient-to-r flex justify-between items-center from-white to-blue-50/30">
+                            <div className="flex items-center gap-4 mb-4">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="lg:hidden hover:bg-blue-100 rounded-xl"
+                                    onClick={() => setSelectedConversation(null)}
+                                >
+                                    <ArrowLeft className="h-5 w-5" />
+                                </Button>
+                                <Avatar className="h-12 w-12 ring-2 ring-blue-200/50 shadow-sm">
+                                    <AvatarImage src={selectedConversation.avatar} />
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-400 to-purple-500 text-white font-semibold">
+                                        {selectedConversation.name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-gray-800 text-lg">{selectedConversation.name}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className={`h-2 w-2 rounded-full ${selectedConversation.is_online ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                        <p className="text-sm text-gray-500">
+                                            {selectedConversation.is_online ? 'Active now' : 'Offline'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* View Mode Toggle */}
+                            <div className="flex items-center h-fit gap-1 bg-gray-100/80 rounded-lg p-1 w-fit">
+                                <button
+                                    onClick={() => setFacultyViewMode('messages')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${facultyViewMode === 'messages'
+                                            ? 'bg-white text-blue-600 shadow-sm'
+                                            : 'text-gray-600 hover:text-blue-600 hover:bg-white/50'
+                                        }`}
+                                >
+                                    <MessageCircle className="h-4 w-4" />
+                                    Messages
+                                </button>
+                                <button
+                                    onClick={() => setFacultyViewMode('questions')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${facultyViewMode === 'questions'
+                                            ? 'bg-white text-blue-600 shadow-sm'
+                                            : 'text-gray-600 hover:text-blue-600 hover:bg-white/50'
+                                        }`}
+                                >
+                                    <FileQuestion className="h-4 w-4" />
+                                    Questions
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Content Area - Messages or Questions */}
+                        {facultyViewMode === 'messages' ? (
+                            <>
+                                {/* Messages */}
+                                <div
+                                    ref={messagesContainerRef}
+                                    className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-100/30 to-blue-50/30 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                                    onScroll={handleScroll}
+                                >
+                                    {messages.length > 0 ? (
+                                        <>
+                                            {messages.map((msg, index) => {
+                                                const isCurrentUser = msg.sender_id === currentUser.id;
+                                                const showTime = index === 0 ||
+                                                    (new Date(msg.created_at).getTime() - new Date(messages[index - 1].created_at).getTime()) > 300000; // 5 minutes
+
+                                                return (
+                                                    <div key={msg.id} className="space-y-2">
+                                                        {showTime && (
+                                                            <div className="flex justify-center">
+                                                                <div className="flex items-center gap-2 px-3 py-1 bg-white/80 rounded-full shadow-sm border border-gray-200/50">
+                                                                    <Clock className="h-3 w-3 text-gray-400" />
+                                                                    <span className="text-xs text-gray-500 font-medium">
+                                                                        {formatTime(msg.created_at)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className={`max-w-[75%] group ${isCurrentUser ? 'flex flex-col items-end' : 'flex flex-col items-start'}`}>
+                                                                <div
+                                                                    className={`rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${isCurrentUser
+                                                                            ? 'bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-br-md'
+                                                                            : 'bg-white border border-gray-200/80 text-gray-800 rounded-bl-md'
+                                                                        }`}
+                                                                >
+                                                                    <p className="text-sm leading-relaxed break-words">{msg.message}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            <div ref={messagesEndRef} />
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                                            <div className="p-6 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-6">
+                                                <Mail className="h-16 w-16 text-blue-500" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-gray-700 mb-3">No messages yet</h3>
+                                            <p className="text-gray-500 max-w-md leading-relaxed">
+                                                Start a conversation with <span className="font-semibold text-blue-600">{selectedConversation.name}</span>.
+                                                Say hello and break the ice!
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Message Input */}
+                                <div className="p-4 border-t border-slate-200/60 bg-white">
+                                    <div className="flex gap-3 items-end">
+                                        <div className="flex-1">
+                                            <Textarea
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                                placeholder="Type your message..."
+                                                className="min-h-[50px] max-h-32 resize-none bg-gray-50/80 border-gray-200/80 focus:bg-white focus:border-blue-300 transition-all duration-200 rounded-xl"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSendMessage();
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="pb-1.5">
+                                            <Button
+                                                onClick={handleSendMessage}
+                                                disabled={!newMessage.trim() || isSending}
+                                                className="h-12 w-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                                            >
+                                                {isSending ? (
+                                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                                ) : (
+                                                    <Send className="h-5 w-5" />
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            renderFacultyQuestions()
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30">
+                        <div className="text-center p-12">
+                            <div className="p-8 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mb-8 inline-block">
+                                <Users className="h-24 w-24 text-blue-500" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-700 mb-4">Select a Faculty</h2>
+                            <p className="text-gray-500 max-w-md leading-relaxed">
+                                Choose a faculty from the sidebar to start chatting or view their questions.
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

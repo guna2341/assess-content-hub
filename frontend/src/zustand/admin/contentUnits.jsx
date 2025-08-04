@@ -1,54 +1,91 @@
     import { create } from "zustand";
     import { contentUnits } from "../../utils/admin";
-import ADMIN_SERVICES from "../../api/services/admin";
-    
+    import ADMIN_SERVICES from "../../api/services/admin";
+    import { useAuthStore } from "../../stores/authStore";
+import FACULTY_SERVICES from "../../api/services/faculty";
+
     export const useAdminContentStore = create((set, get) => ({
-        content: contentUnits,
+        content: [],
 
-        getContent: async (params) => {
-            const response = await ADMIN_SERVICES.getContent(params);
-            console.log(response);
-        },
-
-        editContent: (data) => {        
-            const newData = {
-                ...data,
-                status:"pending",
-                createdAt: '2024-01-15',
-                updatedAt: '2024-01-20',
-                createdBy: 'Dr. Smith',
-                totalReviews: 0,
-                minimumReviews: 3,
-            };
-            set((state) => ({
-                content: state.content.map((item) =>
-                    item.id === newData.id ? newData : item
-                ),
-            }));
-        },
-
-        deleteContent: (id) => {
-            set(state => ({
-                content: state.content.filter(item => item.id !== id)
-            }));
-        },
-
-        createContent: async (data) => {
-            const response = await ADMIN_SERVICES.createContent({ data });
-            const newData = {
-                ...data,
-                status: "pending",
-                tags: ["react", "hooks", "javascript"],
-                totalReviews: 0,
-                minimumReviews: 3,
-                questionType:"content",
-                questions: {
-                    ...data.questions
+        getContent: async () => {
+            const { content } = get();
+            const { user } = useAuthStore.getState();
+            try {
+                if (content.length > 0) {
+                    return { message: "Data fetched successfully", state: true };
                 }
-            };         
-            set((state) => ({
-                content:[...state.content, newData]
-            }));
+                let response;
+                if (user.role == "admin") {
+                    response = await ADMIN_SERVICES.getContent();
+                }
+                else {
+                    response = await FACULTY_SERVICES.getContent();
+                }
+                set({ content: response?.data?.data });
+                return { message: "Data fetched successfully", state: true };
+            }
+            catch (err) {
+                return {message: err.message, state: false };
+            }
+        },
+
+        editContent: async (id, updatedData) => {
+            try {
+                const response = await ADMIN_SERVICES.editContent(id, updatedData);
+                if (response.data?.content) {
+                    set((state) => ({
+                        content: state.content.map((item) =>
+                            item.id === id ? response.data.content : item
+                        )
+                    }));
+                }
+            } catch (err) {
+                console.error("Edit content error:", err);
+            }
+        },
+
+        deleteContent: async (contentId, questionId) => {
+            try {
+                const response = await ADMIN_SERVICES.deleteContent(contentId, questionId);
+
+                set((state) => {
+                    if (questionId) {
+                        // Deleting a question
+                        return {
+                            content: state.content.map((item) =>
+                                item.id === contentId
+                                    ? {
+                                        ...item,
+                                        questions: item.questions.filter((q) => q.id !== questionId), // New array
+                                    }
+                                    : item
+                            ),
+                        };
+                    }
+
+                    // Deleting a whole content
+                    return {
+                        content: state.content.filter((item) => item.id !== contentId), // New array
+                    };
+                });
+            } catch (err) {
+                console.error("Error deleting content/question:", err);
+            }
+        },
+
+
+
+        createContent: async (data) => {            
+            try {
+                const response = await ADMIN_SERVICES.createContent({ content: data });
+                set((state) => ({
+                    content: [...state.content, response?.data?.content]
+                }));
+                return { data: response.data ,state:true};
+            }
+            catch (err) {
+                return { message: err.message ,state:false};
+            }
         }
 
     }));

@@ -1,21 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
     ArrowLeft,
-    FileText,
-    Video,
     Image as ImageIcon,
     CheckCircle,
     AlertCircle,
     XCircle,
     Share2,
     Printer,
-    Edit,
-    Eye,
     Pencil,
-    Bookmark
+    Clock,
+    Plus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -33,14 +30,37 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAdminContentStore } from '../../zustand/admin/contentUnits';
 import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/hooks/use-toast';
 
 export function ContentViewPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const contentUnits = useAdminContentStore(state => state.content);
+    const deleteContent = useAdminContentStore(state => state.deleteContent);
     const { user } = useAuthStore();
-    const unit = contentUnits.find(u => u.id === id);
-    const [localQuestions, setLocalQuestions] = useState(unit?.questions || []);
+    const unit = contentUnits.find(u => `${u.id}` === `${id}`);
+    const [localQuestions, setLocalQuestions] = useState([]);
+    const { toast } = useToast();
+    const [imageLoading, setImageLoading] = useState(false);
+    console.log(unit);
+    
+    useEffect(() => {
+        if (unit) {
+            setLocalQuestions(unit.questions || []);
+        }
+    }, [unit]);
+
+    useEffect(() => {
+        if (!unit) {
+            toast({
+                title: "Content not found",
+                variant: "error"
+            });
+            setTimeout(() => {
+                navigate("/content");
+            }, 1000);
+        }
+    }, [unit, toast, navigate]);
 
     const handleQuestionStatusChange = (questionId, newStatus) => {
         setLocalQuestions(prevQuestions =>
@@ -73,15 +93,30 @@ export function ContentViewPage() {
     };
 
     const handleShareQuestion = (question) => {
-        // In a real app, this would generate a shareable link
         console.log("Sharing question:", question.id);
         alert(`Share link generated for question: ${question.id}`);
     };
 
     const handlePrintQuestion = (question) => {
-        // In a real app, this would open print dialog
         console.log("Printing question:", question.id);
         alert(`Printing question: ${question.id}`);
+    };
+
+    const handleDelete = async (questionId) => {
+        try {
+            await deleteContent(unit.id, questionId);
+            toast({
+                title: "Question deleted successfully",
+                variant: "success",
+            });
+            setLocalQuestions(prev => prev.filter(q => q.id !== questionId));
+        } catch (err) {
+            console.error("Delete failed:", err);
+            toast({
+                title: "Failed to delete question",
+                variant: "error",
+            });
+        }
     };
 
     if (!unit) {
@@ -109,7 +144,7 @@ export function ContentViewPage() {
                 </Button>
             </div>
 
-            <Card className="bg-gradient-card border-0 shadow-soft">
+            <Card className="bg-gradient-card border shadow-soft">
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row justify-between gap-4">
                         <div>
@@ -130,13 +165,17 @@ export function ContentViewPage() {
                     <Tabs defaultValue="content" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="content">Content</TabsTrigger>
-                            <TabsTrigger value="questions">Questions</TabsTrigger>
+                            {localQuestions.length > 0 && (
+                                <TabsTrigger value="questions">Questions</TabsTrigger>
+                            )}
                         </TabsList>
 
                         <TabsContent value="content" className="mt-6">
                             {unit.imageLink && (
                                 <div className="flex justify-center my-4">
+                                    {!imageLoading && <ImageIcon className='w-40 h-40' />}
                                     <img
+                                        onLoad={() => setImageLoading(true)}
                                         src={unit.imageLink}
                                         alt="Content image"
                                         className="max-h-[400px] rounded-lg object-contain"
@@ -152,7 +191,7 @@ export function ContentViewPage() {
                                 </div>
                             )}
                             {unit.content && (
-                                <div className="mt-6 p-4 bg-muted/20 rounded-lg">
+                                <div className="mt-6 p-4 bg-muted/20 rounded-lg bg-white border">
                                     <h4 className="font-medium mb-2">Content</h4>
                                     <div
                                         className="prose dark:prose-invert max-w-none mt-4"
@@ -161,17 +200,17 @@ export function ContentViewPage() {
                                 </div>
                             )}
                             {unit.explanation && (
-                                <div className="mt-6 p-4 bg-muted/20 rounded-lg">
+                                <div className="mt-6 p-4 bg-muted/20 rounded-lg bg-white border">
                                     <h4 className="font-medium mb-2">Explanation</h4>
                                     <p>{unit.explanation}</p>
                                 </div>
                             )}
                         </TabsContent>
 
-                        <TabsContent value="questions" className="mt-6">
-                            <div className="space-y-6">
-                                {localQuestions.length > 0 ? (
-                                    localQuestions.map(question => (
+                        {localQuestions.length > 0 ? (
+                            <TabsContent value="questions" className="mt-6">
+                                <div className="space-y-6">
+                                    {localQuestions.map(question => (
                                         <Card key={question.id}>
                                             <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-4">
                                                 <div>
@@ -200,14 +239,14 @@ export function ContentViewPage() {
                                                         <div className="space-y-2">
                                                             {question.options?.map((option, index) => (
                                                                 <div
-                                                                    key={option.id}
+                                                                    key={option.id || index}
                                                                     className={`py-2.5 pb-3.5 px-3 rounded-2xl border ${question.correctAnswer === String.fromCharCode(97 + index) ? 'border-green-500 bg-green-50 text-green-500' : 'border-muted'}`}
                                                                 >
                                                                     <div className="flex items-center">
                                                                         <span className="font-medium mr-2">
                                                                             {String.fromCharCode(65 + index)}.
                                                                         </span>
-                                                                        <p>{option.text}</p>
+                                                                        <p>{option.text || option}</p>
                                                                         {question.correctAnswer === String.fromCharCode(97 + index) && (
                                                                             <span className="ml-auto text-green-600 flex items-center">
                                                                                 <CheckCircle className="h-4 w-4 mr-1" />
@@ -256,7 +295,7 @@ export function ContentViewPage() {
                                                             <>
                                                                 <AlertDialog>
                                                                     <AlertDialogTrigger asChild>
-                                                                        <Button variant="outline" size="sm" className="border-green-500 text-green-700 hover:bg-green-50">
+                                                                        <Button variant="outline" size="sm" className="border-green-500 text-green-700 hover:bg-green-50 hover:text-green-500">
                                                                             <CheckCircle className="h-4 w-4 mr-1" />
                                                                             Publish
                                                                         </Button>
@@ -281,10 +320,10 @@ export function ContentViewPage() {
                                                                 </AlertDialog>
 
                                                                 <AlertDialog>
-                                                                    <AlertDialogTrigger asChild>
-                                                                        <Button variant="outline" size="sm" className="border-blue-500 text-blue-700 hover:bg-blue-50">
+                                                                    <AlertDialogTrigger asChild className="hover:border-red-500">
+                                                                        <Button variant="outline" size="sm" className="border-red-500 text-red-700 hover:bg-red-50 hover:text-red-500">
                                                                             <CheckCircle className="h-4 w-4 mr-1" />
-                                                                            Approve
+                                                                            Reject
                                                                         </Button>
                                                                     </AlertDialogTrigger>
                                                                     <AlertDialogContent>
@@ -298,7 +337,7 @@ export function ContentViewPage() {
                                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                                             <AlertDialogAction
                                                                                 onClick={() => handleQuestionStatusChange(question.id, 'approved')}
-                                                                                className="bg-blue-600 hover:bg-blue-700"
+                                                                                className="bg-blue-600 hover:bg-red-700"
                                                                             >
                                                                                 Approve
                                                                             </AlertDialogAction>
@@ -307,40 +346,58 @@ export function ContentViewPage() {
                                                                 </AlertDialog>
                                                             </>
                                                         )}
-
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleShareQuestion(question)}
-                                                        >
-                                                            <Share2 className="h-4 w-4 mr-1" />
-                                                            Share
-                                                        </Button>
-
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handlePrintQuestion(question)}
-                                                        >
-                                                            <Printer className="h-4 w-4 mr-1" />
-                                                            Print
-                                                        </Button>
+                                                        {user.role == "admin" &&
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        className="h-9 w-20 bg-red-600 text-white hover:bg-red-500 hover:shadow-red-500/20 hover:shadow-sm transition duration-200"
+                                                                    >
+                                                                        Delete
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            Are you sure you want to delete this question?
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction
+                                                                            className="bg-red-600 text-white hover:bg-red-500 hover:shadow-red-500/20 hover:shadow-sm transition duration-200"
+                                                                            onClick={() => handleDelete(question.id)}
+                                                                        >
+                                                                            Delete
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        }
                                                     </div>
                                                 </div>
                                             </CardContent>
                                         </Card>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8">
-                                        <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <p className="text-muted-foreground">No questions available</p>
-                                    </div>
-                                )}
+                                    ))}
+                                </div>
+                            </TabsContent>
+                        ) : (
+                            <div className="mt-6 text-center py-8">
+                                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-muted-foreground">No questions available for this unit</p>
+                                <Button
+                                    variant="outline"
+                                    className="mt-4"
+                                    onClick={() => navigate(`/content/edit/${unit.id}`)}
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Questions
+                                </Button>
                             </div>
-                        </TabsContent>
+                        )}
                     </Tabs>
                 </CardContent>
             </Card>
         </div>
     );
-}   
+}
