@@ -346,51 +346,34 @@ export function ContentViewPage() {
                                                                 </AlertDialog>
                                                             </>
                                                         )}
-
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleShareQuestion(question)}
-                                                        >
-                                                            <Share2 className="h-4 w-4 mr-1" />
-                                                            Share
-                                                        </Button>
-
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handlePrintQuestion(question)}
-                                                        >
-                                                            <Printer className="h-4 w-4 mr-1" />
-                                                            Print
-                                                        </Button>
-
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button
-                                                                    className="h-9 w-20 bg-red-600 text-white hover:bg-red-500 hover:shadow-red-500/20 hover:shadow-sm transition duration-200"
-                                                                >
-                                                                    Delete
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Delete Question</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        Are you sure you want to delete this question?
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction
-                                                                        className="bg-red-600 text-white hover:bg-red-500 hover:shadow-red-500/20 hover:shadow-sm transition duration-200"
-                                                                        onClick={() => handleDelete(question.id)}
+                                                        {user.role == "admin" &&
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button
+                                                                        className="h-9 w-20 bg-red-600 text-white hover:bg-red-500 hover:shadow-red-500/20 hover:shadow-sm transition duration-200"
                                                                     >
                                                                         Delete
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Delete Question</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            Are you sure you want to delete this question?
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction
+                                                                            className="bg-red-600 text-white hover:bg-red-500 hover:shadow-red-500/20 hover:shadow-sm transition duration-200"
+                                                                            onClick={() => handleDelete(question.id)}
+                                                                        >
+                                                                            Delete
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        }
                                                     </div>
                                                 </div>
                                             </CardContent>

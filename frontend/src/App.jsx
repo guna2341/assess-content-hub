@@ -73,7 +73,7 @@ const App = () => (
               } />
 
             <Route path="content/create" element={
-              <ProtectedRoute allowedRoles={["admin"]} >
+              <ProtectedRoute allowedRoles={["admin", "reviewer"]} >
                 <CreateContentPage />
               </ProtectedRoute>}
             />
@@ -82,12 +82,12 @@ const App = () => (
                 <ContentViewPage />
               </ProtectedRoute>} />
             <Route path="content/:id/edit" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={["admin", "reviewer"]}>
                 <ContentEditPage />
               </ProtectedRoute>
             } />
             <Route path="questions/create" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={["admin", "reviewer"]}>
                 <TooltipProvider>
                   <QuestionCreator />
                 </TooltipProvider>

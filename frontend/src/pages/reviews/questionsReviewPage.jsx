@@ -22,6 +22,9 @@ import {
     Clock,
     User,
     MessageSquare,
+    Filter,
+    ChevronDown,
+    ChevronUp,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -36,7 +39,7 @@ const questionBank = [
                 name: 'Algebra',
                 questions: [
                     {
-                        id: '1',
+                        id: '1.1',
                         question: 'Solve for x: 2x + 5 = 13',
                         difficulty: 'Easy',
                         options: ['x = 4', 'x = 6', 'x = 8', 'x = 9'],
@@ -63,7 +66,7 @@ const questionBank = [
                         questionCount: 25,
                         questions: [
                             {
-                                id: '2',
+                                id: '1.2',
                                 question: 'Solve for x: 3x - 7 = 14',
                                 difficulty: 'Easy',
                                 options: ['x = 7', 'x = 6', 'x = 8', 'x = 9'],
@@ -82,7 +85,7 @@ const questionBank = [
                         questionCount: 18,
                         questions: [
                             {
-                                id: '4',
+                                id: '1.3',
                                 question: 'Find the value of x: 3x - 7 = 11',
                                 difficulty: 'Easy',
                                 options: ['x = 4', 'x = 6', 'x = 5', 'x = 7'],
@@ -107,7 +110,7 @@ const questionBank = [
                         questionCount: 15,
                         questions: [
                             {
-                                id: '6',
+                                id: '1.4',
                                 question: 'How many sides does a hexagon have?',
                                 type: 'Multiple Choice',
                                 difficulty: 'Easy',
@@ -139,7 +142,7 @@ const questionBank = [
                         questionCount: 30,
                         questions: [
                             {
-                                id: '3',
+                                id: '1.5',
                                 question: 'Explain Newton first law of motion with an example.',
                                 type: 'Long Answer',
                                 topic: 'mechanics',
@@ -174,6 +177,7 @@ export function QuestionBankPage() {
     const [newComment, setNewComment] = useState('');
     const [comments, setComments] = useState({});
     const [loading, setLoading] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
     const { toast } = useToast();
 
     const getStatusBadge = (status) => {
@@ -189,6 +193,14 @@ export function QuestionBankPage() {
                     Pending
                 </Badge>;
             case 'needs_review':
+                return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                    Needs Review
+                </Badge>;
+            case 'rejected':
+                return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                    <XCircle className="h-3 w-3 mr-1" />
+                    Rejected
+                </Badge>;
             default:
                 return <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-300">
                     {status}
@@ -289,12 +301,41 @@ export function QuestionBankPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Question Bank</h1>
                     <p className="text-muted-foreground">
                         Browse and manage all approved questions
                     </p>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search questions..."
+                            className="pl-10 bg-white"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                                <div className="space-y-2 max-w-[200px]">
+                                    <label className="text-sm font-medium">Difficulty</label>
+                                    <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                                        <SelectTrigger className="bg-white">
+                                            <SelectValue placeholder="Select difficulty" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Difficulties</SelectItem>
+                                            <SelectItem value="Easy">Easy</SelectItem>
+                                            <SelectItem value="Medium">Medium</SelectItem>
+                                            <SelectItem value="Hard">Hard</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                            </div>
+                    </div>
                 </div>
             </div>
 
@@ -311,7 +352,7 @@ export function QuestionBankPage() {
                     filteredQuestions.map(question => (
                         <Card key={question.id} className="mb-4">
                             <CardContent className="p-6">
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
                                             <h3 className="font-medium text-lg">{question.question}</h3>
@@ -340,8 +381,8 @@ export function QuestionBankPage() {
                                                     <div
                                                         key={index}
                                                         className={`text-sm p-2 rounded-lg border ${String.fromCharCode(65 + index) === question.correctAnswer ?
-                                                                'bg-green-50 text-green-800 border-green-200' :
-                                                                'bg-white text-gray-800 border-gray-200'
+                                                            'bg-green-50 text-green-800 border-green-200' :
+                                                            'bg-white text-gray-800 border-gray-200'
                                                             }`}
                                                     >
                                                         {String.fromCharCode(65 + index)}. {option}
@@ -351,18 +392,22 @@ export function QuestionBankPage() {
                                         </div>
                                     )}
 
-                                    <div className="bg-muted/20 p-4 rounded-lg border border-gray-200">
-                                        <p className="text-sm font-medium">Correct Answer:</p>
-                                        <p className="text-sm mt-1 bg-white p-2 rounded-lg border border-gray-200">
-                                            {question.correctAnswer}
-                                        </p>
-                                        <p className="text-sm font-medium mt-3">Explanation:</p>
-                                        <p className="text-sm mt-1 bg-white p-2 rounded-lg border border-gray-200">
-                                            {question.explanation}
-                                        </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-muted/20 p-4 rounded-lg border border-gray-200">
+                                            <p className="text-sm font-medium">Correct Answer:</p>
+                                            <p className="text-sm mt-1 bg-white p-2 rounded-lg border border-gray-200">
+                                                {question.correctAnswer}
+                                            </p>
+                                        </div>
+                                        <div className="bg-muted/20 p-4 rounded-lg border border-gray-200">
+                                            <p className="text-sm font-medium">Explanation:</p>
+                                            <p className="text-sm mt-1 bg-white p-2 rounded-lg border border-gray-200">
+                                                {question.explanation}
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         <div className="flex items-center gap-2 text-sm font-medium">
                                             <MessageSquare className="h-4 w-4" />
                                             <span>Review Comments</span>
@@ -402,13 +447,14 @@ export function QuestionBankPage() {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center justify-end gap-3 pt-4 border-t">
+                                    <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t">
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     className="text-white bg-green-600 hover:bg-green-700 hover:text-white border-green-600"
+                                                    disabled={loading}
                                                 >
                                                     <CheckCircle className="h-4 w-4 mr-1" />
                                                     Approve
@@ -433,13 +479,13 @@ export function QuestionBankPage() {
                                             </AlertDialogContent>
                                         </AlertDialog>
 
-                                        {/* Highlighted Reject Button */}
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     className="text-white bg-red-600 hover:bg-red-700 hover:text-white border-red-600"
+                                                    disabled={loading}
                                                 >
                                                     <XCircle className="h-4 w-4 mr-1" />
                                                     Reject
